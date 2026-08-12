@@ -5,6 +5,7 @@ import numpy as np
 import cv2
 import tempfile
 import os
+import textwrap
 
 
 # ============================================================
@@ -28,14 +29,28 @@ if "page" not in st.session_state:
 
 
 # ============================================================
+# MODEL
+# ============================================================
+
+@st.cache_resource
+def load_model():
+
+    model_path = os.path.join(
+        os.path.dirname(__file__),
+        "best.pt"
+    )
+
+    return YOLO(model_path)
+
+
+# ============================================================
 # CSS
 # ============================================================
 
 st.markdown(
-    """
+    textwrap.dedent("""
     <style>
 
-    /* Remove Streamlit default elements */
     #MainMenu {
         visibility: hidden;
     }
@@ -48,14 +63,10 @@ st.markdown(
         visibility: hidden;
     }
 
-
-    /* Page background */
     .stApp {
         background-color: #f5f6fa;
     }
 
-
-    /* Main width */
     .block-container {
         max-width: 1400px !important;
         padding-top: 0.5rem !important;
@@ -65,9 +76,9 @@ st.markdown(
     }
 
 
-    /* ========================================================
-       MAIN TITLE
-       ======================================================== */
+    /* ==============================
+       TITLE
+       ============================== */
 
     .main-title {
         text-align: center;
@@ -75,22 +86,25 @@ st.markdown(
         font-size: 31px;
         font-weight: 800;
         margin-top: -5px;
-        margin-bottom: 25px;
+        margin-bottom: 30px;
     }
 
 
-    /* ========================================================
-       LEFT AICW
-       ======================================================== */
+    /* ==============================
+       AICW
+       ============================== */
 
     .aicw-title {
         color: #172b55;
         font-size: 25px;
         font-weight: 800;
         line-height: 1.55;
-        margin-top: 5px;
     }
 
+
+    /* ==============================
+       CAPSTONE
+       ============================== */
 
     .capstone-title {
         color: #303c52;
@@ -100,9 +114,9 @@ st.markdown(
     }
 
 
-    /* ========================================================
+    /* ==============================
        DESCRIPTION
-       ======================================================== */
+       ============================== */
 
     .description-title {
         color: #172b55;
@@ -111,39 +125,32 @@ st.markdown(
         margin-bottom: 10px;
     }
 
-
     .description-text {
         color: #626b78;
         font-size: 15px;
         line-height: 1.65;
-        text-align: left;
+        max-width: 850px;
     }
 
 
-    /* ========================================================
+    /* ==============================
        PREDICT BUTTON
-       ======================================================== */
+       ============================== */
 
     div.stButton > button {
-        height: 44px;
-        border-radius: 8px;
-        background-color: white;
-        border: 1px solid #d8dde5;
-        color: #394252;
-        font-size: 14px;
-        font-weight: 500;
+        height: 44px !important;
+        border-radius: 8px !important;
+        background-color: white !important;
+        border: 1px solid #d8dde5 !important;
+        color: #394252 !important;
+        font-size: 14px !important;
+        font-weight: 500 !important;
     }
 
 
-    div.stButton > button:hover {
-        border-color: #aeb7c5;
-        color: #172b55;
-    }
-
-
-    /* ========================================================
+    /* ==============================
        CARDS
-       ======================================================== */
+       ============================== */
 
     .info-card {
         background-color: white;
@@ -151,9 +158,9 @@ st.markdown(
         border-radius: 17px;
         padding: 20px 16px;
         min-height: 235px;
-        box-shadow: 0px 1px 2px rgba(0,0,0,0.02);
+        box-shadow: 0 1px 2px rgba(0,0,0,0.02);
+        box-sizing: border-box;
     }
-
 
     .card-title {
         color: #303743;
@@ -162,20 +169,17 @@ st.markdown(
         margin-bottom: 25px;
     }
 
-
     .card-content {
         color: #4d5562;
         font-size: 14px;
         line-height: 2.7;
     }
 
-
     .guide-name {
         color: #4d5562;
         font-size: 15px;
         margin-bottom: 28px;
     }
-
 
     .designation-title {
         color: #303743;
@@ -184,7 +188,6 @@ st.markdown(
         margin-bottom: 20px;
     }
 
-
     .designation {
         color: #4d5562;
         font-size: 14px;
@@ -192,9 +195,9 @@ st.markdown(
     }
 
 
-    /* ========================================================
+    /* ==============================
        FOOTER
-       ======================================================== */
+       ============================== */
 
     .project-footer {
         text-align: center;
@@ -204,9 +207,9 @@ st.markdown(
     }
 
 
-    /* ========================================================
+    /* ==============================
        DETECTION PAGE
-       ======================================================== */
+       ============================== */
 
     .detect-title {
         text-align: center;
@@ -216,7 +219,6 @@ st.markdown(
         margin-bottom: 5px;
     }
 
-
     .detect-subtitle {
         text-align: center;
         color: #626b78;
@@ -224,6 +226,14 @@ st.markdown(
         margin-bottom: 20px;
     }
 
+    .waiting-box {
+        background-color: white;
+        border: 1px dashed #c8ced8;
+        border-radius: 12px;
+        padding: 60px 20px;
+        text-align: center;
+        color: #727b88;
+    }
 
     .result-safe {
         background-color: #ecfdf3;
@@ -233,7 +243,6 @@ st.markdown(
         text-align: center;
         color: #16803c;
     }
-
 
     .result-danger {
         background-color: #fff0f0;
@@ -245,17 +254,11 @@ st.markdown(
     }
 
 
-    .waiting-box {
-        background-color: white;
-        border: 1px dashed #c8ced8;
-        border-radius: 12px;
-        padding: 60px 20px;
-        text-align: center;
-        color: #727b88;
-    }
+    /* ==============================
+       MOBILE
+       ============================== */
 
-
-    @media(max-width:900px) {
+    @media(max-width: 900px) {
 
         .block-container {
             padding-left: 5% !important;
@@ -274,31 +277,12 @@ st.markdown(
             font-size: 19px;
         }
 
-        .description-title {
-            margin-top: 25px;
-        }
-
     }
 
     </style>
-    """,
+    """),
     unsafe_allow_html=True
 )
-
-
-# ============================================================
-# LOAD YOLO MODEL
-# ============================================================
-
-@st.cache_resource
-def load_model():
-
-    model_path = os.path.join(
-        os.path.dirname(__file__),
-        "best.pt"
-    )
-
-    return YOLO(model_path)
 
 
 # ============================================================
@@ -308,15 +292,15 @@ def load_model():
 if st.session_state.page == "home":
 
     # --------------------------------------------------------
-    # TITLE
+    # MAIN TITLE
     # --------------------------------------------------------
 
     st.markdown(
-        """
+        textwrap.dedent("""
         <div class="main-title">
             🦺 GuardX-AI – Construction PPE Detection System
         </div>
-        """,
+        """),
         unsafe_allow_html=True
     )
 
@@ -325,20 +309,20 @@ if st.session_state.page == "home":
     # TOP SECTION
     # --------------------------------------------------------
 
-    left, right = st.columns(
+    left_col, right_col = st.columns(
         [0.36, 0.64],
         gap="large"
     )
 
 
-    # --------------------------------------------------------
-    # LEFT
-    # --------------------------------------------------------
+    # ========================================================
+    # LEFT — AICW + CAPSTONE + PREDICT
+    # ========================================================
 
-    with left:
+    with left_col:
 
         st.markdown(
-            """
+            textwrap.dedent("""
             <div class="aicw-title">
                 AI Career for Women
                 <br>
@@ -348,7 +332,7 @@ if st.session_state.page == "home":
             <div class="capstone-title">
                 Capstone Project
             </div>
-            """,
+            """),
             unsafe_allow_html=True
         )
 
@@ -360,7 +344,7 @@ if st.session_state.page == "home":
 
 
         if st.button(
-            "🔍  PREDICT",
+            "🔍 PREDICT",
             key="predict_button",
             use_container_width=True
         ):
@@ -370,14 +354,14 @@ if st.session_state.page == "home":
             st.rerun()
 
 
-    # --------------------------------------------------------
-    # RIGHT — DESCRIPTION
-    # --------------------------------------------------------
+    # ========================================================
+    # RIGHT — PROJECT DESCRIPTION
+    # ========================================================
 
-    with right:
+    with right_col:
 
         st.markdown(
-            """
+            textwrap.dedent("""
             <div class="description-title">
                 Project Description
             </div>
@@ -389,24 +373,27 @@ if st.session_state.page == "home":
                 for worker safety. However, manually monitoring whether
                 every worker is wearing the required PPE continuously is
                 difficult, time-consuming, and prone to human error.
+
                 GuardX AI is an AI-powered Construction PPE Detection
                 System designed to automatically identify safety equipment
                 such as hardhats, masks, and safety vests from
                 construction-site images and videos. Using YOLO-based
                 object detection, the system detects PPE items and
-                identifies potential safety violations. The solution
-                provides visual detection results, helping improve safety
-                monitoring, reduce manual inspection effort, and support
-                faster identification of unsafe working conditions.
+                identifies potential safety violations.
+
+                The solution provides visual detection results, helping
+                improve safety monitoring, reduce manual inspection
+                effort, and support faster identification of unsafe
+                working conditions.
 
             </div>
-            """,
+            """),
             unsafe_allow_html=True
         )
 
 
     # --------------------------------------------------------
-    # SPACE
+    # SPACE BEFORE CARDS
     # --------------------------------------------------------
 
     st.markdown(
@@ -416,23 +403,23 @@ if st.session_state.page == "home":
 
 
     # ========================================================
-    # THREE BOTTOM CARDS
+    # BOTTOM THREE CARDS
     # ========================================================
 
-    team_col, mail_col, guide_col = st.columns(
+    team_col, gmail_col, guide_col = st.columns(
         [1.25, 1.25, 0.75],
         gap="large"
     )
 
 
-    # --------------------------------------------------------
-    # TEAM MEMBERS
-    # --------------------------------------------------------
+    # ========================================================
+    # TEAM MEMBERS CARD
+    # ========================================================
 
     with team_col:
 
         st.markdown(
-            """
+            textwrap.dedent("""
             <div class="info-card">
 
                 <div class="card-title">
@@ -458,19 +445,19 @@ if st.session_state.page == "home":
                 </div>
 
             </div>
-            """,
+            """),
             unsafe_allow_html=True
         )
 
 
-    # --------------------------------------------------------
-    # GMAIL
-    # --------------------------------------------------------
+    # ========================================================
+    # GMAIL CARD
+    # ========================================================
 
-    with mail_col:
+    with gmail_col:
 
         st.markdown(
-            """
+            textwrap.dedent("""
             <div class="info-card">
 
                 <div class="card-title">
@@ -496,19 +483,19 @@ if st.session_state.page == "home":
                 </div>
 
             </div>
-            """,
+            """),
             unsafe_allow_html=True
         )
 
 
-    # --------------------------------------------------------
-    # GUIDE
-    # --------------------------------------------------------
+    # ========================================================
+    # GUIDE CARD
+    # ========================================================
 
     with guide_col:
 
         st.markdown(
-            """
+            textwrap.dedent("""
             <div class="info-card">
 
                 <div class="card-title">
@@ -528,33 +515,33 @@ if st.session_state.page == "home":
                 </div>
 
             </div>
-            """,
+            """),
             unsafe_allow_html=True
         )
 
 
-    # --------------------------------------------------------
+    # ========================================================
     # FOOTER
-    # --------------------------------------------------------
+    # ========================================================
 
     st.markdown(
-        """
+        textwrap.dedent("""
         <div class="project-footer">
             GuardX-AI – Construction PPE Detection System
         </div>
-        """,
+        """),
         unsafe_allow_html=True
     )
 
 
 # ============================================================
-# PAGE 2 — PPE DETECTION
+# PAGE 2 — DETECTION
 # ============================================================
 
 else:
 
     st.markdown(
-        """
+        textwrap.dedent("""
         <div class="detect-title">
             🦺 GuardX-AI
         </div>
@@ -562,7 +549,7 @@ else:
         <div class="detect-subtitle">
             AI-Powered Construction PPE Detection System
         </div>
-        """,
+        """),
         unsafe_allow_html=True
     )
 
@@ -573,7 +560,7 @@ else:
 
     if st.button(
         "← Back to Home",
-        key="back_home"
+        key="back_button"
     ):
 
         st.session_state.page = "home"
@@ -582,7 +569,7 @@ else:
 
 
     # --------------------------------------------------------
-    # MODEL
+    # LOAD MODEL
     # --------------------------------------------------------
 
     try:
@@ -596,7 +583,7 @@ else:
         )
 
         st.info(
-            "Make sure best.pt is in the same GitHub folder as app.py."
+            "best.pt file app.py tho same folder lo undali."
         )
 
         st.stop()
@@ -618,20 +605,20 @@ else:
 
 
     # ========================================================
-    # IMAGE
+    # IMAGE DETECTION
     # ========================================================
 
     if input_type == "🖼️ Image":
 
-        left, right = st.columns(
+        input_col, result_col = st.columns(
             2,
             gap="large"
         )
 
 
-        with left:
+        with input_col:
 
-            uploaded = st.file_uploader(
+            uploaded_image = st.file_uploader(
                 "Upload Construction Image",
                 type=[
                     "jpg",
@@ -641,10 +628,10 @@ else:
             )
 
 
-            if uploaded:
+            if uploaded_image:
 
                 image = Image.open(
-                    uploaded
+                    uploaded_image
                 ).convert("RGB")
 
 
@@ -655,13 +642,11 @@ else:
                 )
 
 
-                detect = st.button(
+                if st.button(
                     "🔍 Detect PPE",
+                    key="image_detect",
                     use_container_width=True
-                )
-
-
-                if detect:
+                ):
 
                     with st.spinner(
                         "Detecting PPE..."
@@ -675,6 +660,7 @@ else:
 
 
                     annotated = result.plot()
+
 
                     annotated = cv2.cvtColor(
                         annotated,
@@ -714,31 +700,30 @@ else:
                     st.session_state.image_detections = detections
 
 
-        with right:
+        with result_col:
 
             st.subheader(
                 "🤖 Detection Result"
             )
 
 
-            if (
-                "image_result"
-                not in st.session_state
-            ):
+            if "image_result" not in st.session_state:
 
                 st.markdown(
-                    """
+                    textwrap.dedent("""
                     <div class="waiting-box">
 
                         <h3>
                             Waiting for Detection
                         </h3>
 
-                        Upload an image and click
-                        <b>Detect PPE</b>.
+                        <p>
+                            Upload an image and click
+                            <b>Detect PPE</b>.
+                        </p>
 
                     </div>
-                    """,
+                    """),
                     unsafe_allow_html=True
                 )
 
@@ -757,19 +742,19 @@ else:
 
 
                 violations = [
-
                     x for x in detections
-
-                    if "no-" in x[0].lower()
-                    or "without" in x[0].lower()
-
+                    if (
+                        "no-" in x[0].lower()
+                        or
+                        "without" in x[0].lower()
+                    )
                 ]
 
 
                 if violations:
 
                     st.markdown(
-                        """
+                        textwrap.dedent("""
                         <div class="result-danger">
 
                             <h2>
@@ -779,14 +764,14 @@ else:
                             PPE violation detected.
 
                         </div>
-                        """,
+                        """),
                         unsafe_allow_html=True
                     )
 
                 else:
 
                     st.markdown(
-                        """
+                        textwrap.dedent("""
                         <div class="result-safe">
 
                             <h2>
@@ -796,7 +781,7 @@ else:
                             No safety violation detected.
 
                         </div>
-                        """,
+                        """),
                         unsafe_allow_html=True
                     )
 
@@ -822,20 +807,21 @@ else:
 
     elif input_type == "📷 Camera":
 
-        camera = st.camera_input(
+        camera_image = st.camera_input(
             "Take Construction Site Photo"
         )
 
 
-        if camera:
+        if camera_image:
 
             image = Image.open(
-                camera
+                camera_image
             ).convert("RGB")
 
 
             if st.button(
                 "🔍 Detect PPE",
+                key="camera_detect",
                 use_container_width=True
             ):
 
@@ -851,6 +837,7 @@ else:
 
 
                 annotated = result.plot()
+
 
                 annotated = cv2.cvtColor(
                     annotated,
@@ -893,12 +880,12 @@ else:
 
 
                 violations = [
-
                     x for x in detections
-
-                    if "no-" in x[0].lower()
-                    or "without" in x[0].lower()
-
+                    if (
+                        "no-" in x[0].lower()
+                        or
+                        "without" in x[0].lower()
+                    )
                 ]
 
 
@@ -949,6 +936,7 @@ else:
 
             if st.button(
                 "🎥 Detect PPE in Video",
+                key="video_detect",
                 use_container_width=True
             ):
 
@@ -1021,6 +1009,7 @@ else:
                     while True:
 
                         ret, frame = cap.read()
+
 
                         if not ret:
                             break
