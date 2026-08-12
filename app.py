@@ -59,8 +59,10 @@ if uploaded_file is not None:
     image = Image.open(uploaded_file)
 
     st.subheader("Original Image")
-    st.image(image, use_container_width=True)
-
+   st.image(
+    image,
+    width=500
+)
     if st.button("🔍 Detect PPE", type="primary"):
 
         with st.spinner("Running YOLO detection..."):
@@ -82,11 +84,10 @@ if uploaded_file is not None:
 
         st.subheader("Detection Result")
         st.image(
-            annotated_image,
-            channels="BGR",
-            use_container_width=True
-        )
-
+    annotated_image,
+    channels="BGR",
+    width=500
+)
         # ==============================
         # DETECTION SUMMARY
         # ==============================
