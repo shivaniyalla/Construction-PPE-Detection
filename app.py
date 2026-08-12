@@ -716,11 +716,11 @@ else:
     )
 
 
-    # ========================================================
-    # PUSH NOTIFICATION CARD
-    # ========================================================
+# ========================================================
+# PUSH NOTIFICATION CARD
+# ========================================================
 
-   with st.container(border=True):
+with st.container(border=True):
 
     st.markdown("### 🔔 Safety Push Notifications")
 
@@ -729,83 +729,80 @@ else:
         "when GuardX-AI detects a PPE violation."
     )
 
-    # ========================================================
-    # ENABLE PUSH
-    # ========================================================
 
-    if not st.session_state.push_enabled:
+# ========================================================
+# ENABLE PUSH
+# ========================================================
 
-        if st.button(
-            "🔔 Enable Push Notifications",
-            key="enable_push",
-            use_container_width=True
-        ):
+if not st.session_state.push_enabled:
 
-            token_result = get_fcm_token()
+    if st.button(
+        "🔔 Enable Push Notifications",
+        key="enable_push_prediction",
+        use_container_width=True
+    ):
 
-            if token_result:
+        token_result = get_fcm_token()
 
-                if isinstance(token_result, str):
+        if token_result:
 
-                    if token_result.startswith("ERROR:"):
+            if isinstance(token_result, str):
 
-                        st.error(
-                            "❌ Push notification setup failed."
-                        )
+                if token_result.startswith("ERROR:"):
 
-                        st.caption(
-                            token_result
-                        )
+                    st.error(
+                        "❌ Push notification setup failed."
+                    )
 
-                    elif token_result == "PERMISSION_DENIED":
+                    st.caption(token_result)
 
-                        st.warning(
-                            "🔕 Notification permission denied. "
-                            "Please allow notifications in your browser."
-                        )
+                elif token_result == "PERMISSION_DENIED":
 
-                    elif token_result == "NOT_SUPPORTED":
+                    st.warning(
+                        "🔕 Notification permission denied. "
+                        "Please allow notifications in your browser."
+                    )
 
-                        st.warning(
-                            "This browser does not support notifications."
-                        )
+                elif token_result == "NOT_SUPPORTED":
 
-                    elif token_result == "SERVICE_WORKER_NOT_SUPPORTED":
+                    st.warning(
+                        "This browser does not support notifications."
+                    )
 
-                        st.warning(
-                            "Browser service workers are not supported."
-                        )
+                elif token_result == "SERVICE_WORKER_NOT_SUPPORTED":
 
-                    elif token_result == "NO_TOKEN":
+                    st.warning(
+                        "Browser service workers are not supported."
+                    )
 
-                        st.warning(
-                            "FCM token was not generated."
-                        )
+                elif token_result == "NO_TOKEN":
 
-                    else:
+                    st.warning(
+                        "FCM token was not generated."
+                    )
 
-                        st.session_state.fcm_token = token_result
+                else:
 
-                        st.session_state.push_enabled = True
+                    st.session_state.fcm_token = token_result
+                    st.session_state.push_enabled = True
 
-                        st.success(
-                            "🔔 Push notifications enabled successfully!"
-                        )
+                    st.success(
+                        "🔔 Push notifications enabled successfully!"
+                    )
 
-                        st.rerun()
+                    st.rerun()
 
-            else:
+        else:
 
-                st.warning(
-                    "Waiting for notification permission/token..."
-                )
+            st.warning(
+                "Waiting for notification permission/token..."
+            )
 
-    else:
+else:
 
-        st.success(
-            "🔔 Push notifications are enabled."
-        )
-
+    st.success(
+        "🔔 Push notifications are enabled."
+    )
 
     # ========================================================
     # BACK BUTTON
