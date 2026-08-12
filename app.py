@@ -69,47 +69,74 @@ firebase_ready = initialize_firebase()
 
 
 # ============================================================
-# SEND PUSH NOTIFICATION
+# PUSH NOTIFICATION CARD
 # ============================================================
 
-def send_push_notification(token, title, body):
+with st.container(border=True):
 
-    if not token:
-        return False
+    st.markdown(
+        "### 🔔 Safety Push Notifications"
+    )
 
-    if not firebase_ready:
-        return False
+    st.write(
+        "Enable notifications to receive a safety alert "
+        "when GuardX-AI detects a PPE violation."
+    )
 
-    try:
+    if not st.session_state.push_enabled:
 
-        message = messaging.Message(
+        if st.button(
+            "🔔 Enable Push Notifications",
+            key="enable_push",
+            use_container_width=True
+        ):
 
-            notification=messaging.Notification(
-                title=title,
-                body=body
-            ),
+            token_result = get_fcm_token()
 
-            token=token,
+            if token_result:
 
-            webpush=messaging.WebpushConfig(
+                if isinstance(token_result, str):
 
-                notification=messaging.WebpushNotification(
-                    title=title,
-                    body=body,
-                    icon="/favicon.ico"
-                )
-            )
+                    if token_result.startswith("ERROR:"):
+
+                        st.error(
+                            "Push notification setup failed."
+                        )
+
+                    elif token_result == "PERMISSION_DENIED":
+
+                        st.warning(
+                            "Please allow notifications in your browser."
+                        )
+
+                    elif token_result == "NOT_SUPPORTED":
+
+                        st.warning(
+                            "This browser does not support notifications."
+                        )
+
+                    elif token_result == "NO_TOKEN":
+
+                        st.warning(
+                            "FCM token was not generated."
+                        )
+
+                    else:
+
+                        st.session_state.fcm_token = token_result
+                        st.session_state.push_enabled = True
+
+                        st.success(
+                            "🔔 Push notifications enabled successfully!"
+                        )
+
+                        st.rerun()
+
+    else:
+
+        st.success(
+            "🔔 Push notifications are enabled."
         )
-
-        messaging.send(message)
-
-        return True
-
-    except Exception as e:
-
-        st.session_state.push_error = str(e)
-
-        return False
 
 
 # ============================================================
