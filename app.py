@@ -91,7 +91,7 @@ with st.container(border=True):
             use_container_width=True
         ):
 
-            token_result = get_fcm_token()
+           # token_result = get_fcm_token()
 
             if token_result:
 
