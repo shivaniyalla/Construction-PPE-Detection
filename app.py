@@ -209,14 +209,6 @@ st.markdown(
         margin-bottom: 25px;
     }
 
-    .push-card {
-        background: #eef6ff;
-        border: 1px solid #c9ddf5;
-        border-radius: 14px;
-        padding: 16px;
-        margin-bottom: 20px;
-    }
-
     .push-title {
         color: #17345f !important;
         font-size: 17px;
@@ -292,7 +284,7 @@ def load_model():
 
 firebase_web_config = {
 
-    "apiKey": "AIzaSyDB0kB4le-PFo_AILSxTZG1m7yUsOizrDI",
+    "apiKey": "AIzaSyDBk0B4le-PFo_AILSxTZG1m7yUsOizrDI",
 
     "authDomain": "guardx-ai.firebaseapp.com",
 
@@ -399,30 +391,33 @@ def get_fcm_token():
     )
 
 
-# ========================================================
-# PUSH NOTIFICATION CARD
-# ========================================================
+# ============================================================
+# SEND PUSH NOTIFICATION
+# ============================================================
 
-with st.container(border=True):
+def send_push_notification(token, title, body):
 
-    st.markdown("### 🔔 Safety Push Notifications")
+    try:
 
-    st.write(
-        "Enable notifications to receive a safety alert "
-        "when GuardX-AI detects a PPE violation."
-    )
-# ========================================================
-# ENABLE PUSH
-# ========================================================
+        message = messaging.Message(
 
-if not st.session_state.push_enabled:
+            notification=messaging.Notification(
+                title=title,
+                body=body
+            ),
 
-    if st.button(
-        "🔔 Enable Push Notifications",
-       key="guardx_enable_push",
-        use_container_width=True
-    ):
-        ...
+            token=token
+        )
+
+        messaging.send(message)
+
+        return True
+
+    except Exception as e:
+
+        st.session_state.push_error = str(e)
+
+        return False
 
 
 # ============================================================
@@ -537,6 +532,10 @@ if st.session_state.page == "home":
         gap="large"
     )
 
+    # ========================================================
+    # LEFT
+    # ========================================================
+
     with left_col:
 
         st.markdown(
@@ -571,6 +570,11 @@ if st.session_state.page == "home":
 
             st.rerun()
 
+
+    # ========================================================
+    # RIGHT
+    # ========================================================
+
     with right_col:
 
         st.markdown(
@@ -584,35 +588,48 @@ if st.session_state.page == "home":
 
         with st.container(border=True):
 
-            st.markdown(
-                """
-                Construction sites involve high-risk activities where
-                proper Personal Protective Equipment (PPE) is essential
-                for worker safety. However, manually monitoring whether
-                every worker is wearing the required PPE continuously is
-                difficult, time-consuming, and prone to human error.
-
-                GuardX AI is an AI-powered Construction PPE Detection
-                System designed to automatically identify safety equipment
-                such as hardhats, masks, and safety vests from
-                construction-site images and videos. Using YOLO-based
-                object detection, the system detects PPE items and
-                identifies potential safety violations.
-
-                The solution provides visual detection results, helping
-                improve safety monitoring, reduce manual inspection
-                effort, and support faster identification of unsafe
-                working conditions.
-                """
+            st.write(
+                "Construction sites involve high-risk activities where "
+                "proper Personal Protective Equipment (PPE) is essential "
+                "for worker safety. However, manually monitoring whether "
+                "every worker is wearing the required PPE continuously is "
+                "difficult, time-consuming, and prone to human error."
             )
 
+            st.write(
+                "GuardX AI is an AI-powered Construction PPE Detection "
+                "System designed to automatically identify safety equipment "
+                "such as hardhats, masks, and safety vests from "
+                "construction-site images and videos. Using YOLO-based "
+                "object detection, the system detects PPE items and "
+                "identifies potential safety violations."
+            )
+
+            st.write(
+                "The solution provides visual detection results, helping "
+                "improve safety monitoring, reduce manual inspection "
+                "effort, and support faster identification of unsafe "
+                "working conditions."
+            )
+
+
     st.write("")
     st.write("")
+
+
+    # ========================================================
+    # BOTTOM CARDS
+    # ========================================================
 
     team_col, gmail_col, guide_col = st.columns(
         [1.25, 1.25, 0.75],
         gap="large"
     )
+
+
+    # ========================================================
+    # TEAM
+    # ========================================================
 
     with team_col:
 
@@ -634,6 +651,11 @@ if st.session_state.page == "home":
                 unsafe_allow_html=True
             )
 
+
+    # ========================================================
+    # GMAIL
+    # ========================================================
+
     with gmail_col:
 
         with st.container(border=True):
@@ -653,6 +675,11 @@ if st.session_state.page == "home":
                 """,
                 unsafe_allow_html=True
             )
+
+
+    # ========================================================
+    # GUIDE
+    # ========================================================
 
     with guide_col:
 
@@ -681,6 +708,11 @@ if st.session_state.page == "home":
                 unsafe_allow_html=True
             )
 
+
+    # ========================================================
+    # FOOTER
+    # ========================================================
+
     st.markdown(
         """
         <div class="footer-text">
@@ -696,6 +728,10 @@ if st.session_state.page == "home":
 # ============================================================
 
 else:
+
+    # ========================================================
+    # TITLE
+    # ========================================================
 
     st.markdown(
         """
@@ -716,93 +752,98 @@ else:
     )
 
 
-# ========================================================
-# PUSH NOTIFICATION CARD
-# ========================================================
+    # ========================================================
+    # PUSH NOTIFICATION CARD
+    # ONLY ONE CARD + ONE BUTTON
+    # ========================================================
 
-with st.container(border=True):
+    with st.container(border=True):
 
-    st.markdown("### 🔔 Safety Push Notifications")
+        st.markdown(
+            "### 🔔 Safety Push Notifications"
+        )
 
-    st.write(
-        "Enable notifications to receive a safety alert "
-        "when GuardX-AI detects a PPE violation."
-    )
+        st.write(
+            "Enable notifications to receive a safety alert "
+            "when GuardX-AI detects a PPE violation."
+        )
 
+        if not st.session_state.push_enabled:
 
-# ========================================================
-# ENABLE PUSH
-# ========================================================
+            if st.button(
+                "🔔 Enable Push Notifications",
+                key="guardx_enable_push",
+                use_container_width=True
+            ):
 
-if not st.session_state.push_enabled:
+                token_result = get_fcm_token()
 
-    if st.button(
-        "🔔 Enable Push Notifications",
-        key="guardx_enable_push",
-        use_container_width=True
-    ):
+                if token_result:
 
-        token_result = get_fcm_token()
+                    if isinstance(token_result, str):
 
-        if token_result:
+                        if token_result.startswith("ERROR:"):
 
-            if isinstance(token_result, str):
+                            st.error(
+                                "❌ Push notification setup failed."
+                            )
 
-                if token_result.startswith("ERROR:"):
+                            st.caption(
+                                token_result
+                            )
 
-                    st.error(
-                        "❌ Push notification setup failed."
-                    )
+                        elif token_result == "PERMISSION_DENIED":
 
-                    st.caption(token_result)
+                            st.warning(
+                                "🔕 Notification permission denied. "
+                                "Please allow notifications in your browser."
+                            )
 
-                elif token_result == "PERMISSION_DENIED":
+                        elif token_result == "NOT_SUPPORTED":
 
-                    st.warning(
-                        "🔕 Notification permission denied. "
-                        "Please allow notifications in your browser."
-                    )
+                            st.warning(
+                                "This browser does not support notifications."
+                            )
 
-                elif token_result == "NOT_SUPPORTED":
+                        elif token_result == "SERVICE_WORKER_NOT_SUPPORTED":
 
-                    st.warning(
-                        "This browser does not support notifications."
-                    )
+                            st.warning(
+                                "Browser service workers are not supported."
+                            )
 
-                elif token_result == "SERVICE_WORKER_NOT_SUPPORTED":
+                        elif token_result == "NO_TOKEN":
 
-                    st.warning(
-                        "Browser service workers are not supported."
-                    )
+                            st.warning(
+                                "FCM token was not generated."
+                            )
 
-                elif token_result == "NO_TOKEN":
+                        else:
 
-                    st.warning(
-                        "FCM token was not generated."
-                    )
+                            st.session_state.fcm_token = token_result
+
+                            st.session_state.push_enabled = True
+
+                            st.success(
+                                "🔔 Push notifications enabled successfully!"
+                            )
+
+                            st.rerun()
 
                 else:
 
-                    st.session_state.fcm_token = token_result
-                    st.session_state.push_enabled = True
-
-                    st.success(
-                        "🔔 Push notifications enabled successfully!"
+                    st.warning(
+                        "Waiting for notification permission/token..."
                     )
-
-                    st.rerun()
 
         else:
 
-            st.warning(
-                "Waiting for notification permission/token..."
+            st.success(
+                "🔔 Push notifications are enabled."
             )
 
-else:
 
-    st.success(
-        "🔔 Push notifications are enabled."
-    )
+    st.write("")
+
 
     # ========================================================
     # BACK BUTTON
@@ -810,12 +851,14 @@ else:
 
     if st.button(
         "← Back to Home",
-        key="back"
+        key="back",
+        use_container_width=True
     ):
 
         st.session_state.page = "home"
 
         st.rerun()
+
 
     st.write("")
 
@@ -871,6 +914,11 @@ else:
             gap="large"
         )
 
+
+        # ----------------------------------------------------
+        # INPUT
+        # ----------------------------------------------------
+
         with input_col:
 
             st.subheader("Upload Image")
@@ -885,17 +933,20 @@ else:
                 key="image_upload"
             )
 
+
             if uploaded_image:
 
                 image = Image.open(
                     uploaded_image
                 ).convert("RGB")
 
+
                 st.image(
                     image,
                     caption="Input Image",
                     use_container_width=True
                 )
+
 
                 if st.button(
                     "🔍 Detect PPE",
@@ -913,14 +964,18 @@ else:
                             verbose=False
                         )[0]
 
+
                     annotated = result.plot()
+
 
                     annotated = cv2.cvtColor(
                         annotated,
                         cv2.COLOR_BGR2RGB
                     )
 
+
                     detections = []
+
 
                     if result.boxes is not None:
 
@@ -945,14 +1000,18 @@ else:
                                 )
                             )
 
+
                     st.session_state.result_image = annotated
+
                     st.session_state.detections = detections
+
 
                     violations = get_violations(
                         detections
                     )
 
                     st.session_state.image_violations = violations
+
 
                     if violations:
 
@@ -961,15 +1020,22 @@ else:
                             "image"
                         )
 
+
+        # ----------------------------------------------------
+        # RESULT
+        # ----------------------------------------------------
+
         with result_col:
 
             st.subheader("Detection Result")
+
 
             if "result_image" not in st.session_state:
 
                 st.info(
                     "Upload an image and click Detect PPE."
                 )
+
 
             else:
 
@@ -979,12 +1045,14 @@ else:
                     use_container_width=True
                 )
 
+
                 detections = st.session_state.detections
 
                 violations = st.session_state.get(
                     "image_violations",
                     []
                 )
+
 
                 if violations:
 
@@ -997,6 +1065,7 @@ else:
                             )
                         )
                     )
+
 
                     st.markdown(
                         f"""
@@ -1014,6 +1083,7 @@ else:
                         unsafe_allow_html=True
                     )
 
+
                 else:
 
                     st.markdown(
@@ -1027,11 +1097,13 @@ else:
                         unsafe_allow_html=True
                     )
 
+
                 if detections:
 
                     st.write(
                         "### Detected Objects"
                     )
+
 
                     for name, confidence in detections:
 
@@ -1039,6 +1111,7 @@ else:
                             f"**{name}** — "
                             f"{confidence * 100:.1f}%"
                         )
+
 
                 else:
 
@@ -1057,11 +1130,13 @@ else:
             "Take a photo"
         )
 
+
         if camera_image:
 
             image = Image.open(
                 camera_image
             ).convert("RGB")
+
 
             if st.button(
                 "🔍 Detect PPE",
@@ -1079,12 +1154,15 @@ else:
                         verbose=False
                     )[0]
 
+
                 annotated = result.plot()
+
 
                 annotated = cv2.cvtColor(
                     annotated,
                     cv2.COLOR_BGR2RGB
                 )
+
 
                 st.image(
                     annotated,
@@ -1092,7 +1170,9 @@ else:
                     use_container_width=True
                 )
 
+
                 detections = []
+
 
                 if result.boxes is not None:
 
@@ -1117,9 +1197,11 @@ else:
                             )
                         )
 
+
                 violations = get_violations(
                     detections
                 )
+
 
                 if violations:
 
@@ -1132,6 +1214,7 @@ else:
                             )
                         )
                     )
+
 
                     st.markdown(
                         f"""
@@ -1148,10 +1231,12 @@ else:
                         unsafe_allow_html=True
                     )
 
+
                     handle_violation_alert(
                         violations,
                         "camera image"
                     )
+
 
                 else:
 
@@ -1166,11 +1251,13 @@ else:
                         unsafe_allow_html=True
                     )
 
+
                 if detections:
 
                     st.write(
                         "### Detected Objects"
                     )
+
 
                     for name, confidence in detections:
 
@@ -1178,6 +1265,7 @@ else:
                             f"**{name}** — "
                             f"{confidence * 100:.1f}%"
                         )
+
 
                 else:
 
@@ -1203,11 +1291,13 @@ else:
             key="video_upload"
         )
 
+
         if uploaded_video:
 
             st.video(
                 uploaded_video
             )
+
 
             if st.button(
                 "🎥 Detect PPE in Video",
@@ -1224,22 +1314,28 @@ else:
                         suffix=".mp4"
                     )
 
+
                     input_file.write(
                         uploaded_video.getbuffer()
                     )
 
                     input_file.close()
 
+
                     cap = cv2.VideoCapture(
                         input_file.name
                     )
+
 
                     fps = cap.get(
                         cv2.CAP_PROP_FPS
                     )
 
+
                     if fps <= 0:
+
                         fps = 20
+
 
                     width = int(
                         cap.get(
@@ -1247,24 +1343,29 @@ else:
                         )
                     )
 
+
                     height = int(
                         cap.get(
                             cv2.CAP_PROP_FRAME_HEIGHT
                         )
                     )
 
+
                     output_file = tempfile.NamedTemporaryFile(
                         delete=False,
                         suffix=".mp4"
                     )
 
+
                     output_path = output_file.name
 
                     output_file.close()
 
+
                     fourcc = cv2.VideoWriter_fourcc(
                         *"mp4v"
                     )
+
 
                     writer = cv2.VideoWriter(
                         output_path,
@@ -1273,14 +1374,19 @@ else:
                         (width, height)
                     )
 
+
                     video_violations = set()
+
 
                     while True:
 
                         ret, frame = cap.read()
 
+
                         if not ret:
+
                             break
+
 
                         result = model.predict(
                             frame,
@@ -1288,11 +1394,14 @@ else:
                             verbose=False
                         )[0]
 
+
                         annotated = result.plot()
+
 
                         writer.write(
                             annotated
                         )
+
 
                         if result.boxes is not None:
 
@@ -1302,15 +1411,18 @@ else:
                                     box.cls[0]
                                 )
 
+
                                 name = result.names[
                                     class_id
                                 ]
+
 
                                 normalized_name = (
                                     name.lower()
                                     .strip()
                                     .replace(" ", "_")
                                 )
+
 
                                 violation_names = {
 
@@ -1324,22 +1436,28 @@ else:
                                     "without_vest"
                                 }
 
+
                                 if normalized_name in violation_names:
 
                                     video_violations.add(
                                         name
                                     )
 
+
                     cap.release()
+
                     writer.release()
+
 
                 st.success(
                     "✅ Video processing completed."
                 )
 
+
                 st.video(
                     output_path
                 )
+
 
                 if video_violations:
 
@@ -1348,6 +1466,7 @@ else:
                             video_violations
                         )
                     )
+
 
                     st.markdown(
                         f"""
@@ -1365,6 +1484,7 @@ else:
                         unsafe_allow_html=True
                     )
 
+
                     video_violation_list = [
                         (
                             violation,
@@ -1374,10 +1494,12 @@ else:
                         in video_violations
                     ]
 
+
                     handle_violation_alert(
                         video_violation_list,
                         "video"
                     )
+
 
                 else:
 
