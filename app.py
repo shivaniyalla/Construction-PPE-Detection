@@ -69,87 +69,12 @@ firebase_ready = initialize_firebase()
 
 
 # ============================================================
-# PUSH NOTIFICATION CARD
-# ============================================================
-
-with st.container(border=True):
-
-    st.markdown(
-        "### 🔔 Safety Push Notifications"
-    )
-
-    st.write(
-        "Enable notifications to receive a safety alert "
-        "when GuardX-AI detects a PPE violation."
-    )
-
-    if not st.session_state.push_enabled:
-
-        if st.button(
-            "🔔 Enable Push Notifications",
-            key="enable_push",
-            use_container_width=True
-        ):
-
-           # token_result = get_fcm_token()
-
-            if token_result:
-
-                if isinstance(token_result, str):
-
-                    if token_result.startswith("ERROR:"):
-
-                        st.error(
-                            "Push notification setup failed."
-                        )
-
-                    elif token_result == "PERMISSION_DENIED":
-
-                        st.warning(
-                            "Please allow notifications in your browser."
-                        )
-
-                    elif token_result == "NOT_SUPPORTED":
-
-                        st.warning(
-                            "This browser does not support notifications."
-                        )
-
-                    elif token_result == "NO_TOKEN":
-
-                        st.warning(
-                            "FCM token was not generated."
-                        )
-
-                    else:
-
-                        st.session_state.fcm_token = token_result
-                        st.session_state.push_enabled = True
-
-                        st.success(
-                            "🔔 Push notifications enabled successfully!"
-                        )
-
-                        st.rerun()
-
-    else:
-
-        st.success(
-            "🔔 Push notifications are enabled."
-        )
-
-
-# ============================================================
 # GLOBAL CSS
 # ============================================================
 
 st.markdown(
     """
     <style>
-
-    /* ================================
-       MAIN APP
-       ================================ */
 
     .stApp {
         background: #f4f6fa;
@@ -163,11 +88,6 @@ st.markdown(
         padding-right: 7%;
     }
 
-
-    /* ================================
-       HIDE STREAMLIT UI
-       ================================ */
-
     #MainMenu {
         visibility: hidden;
     }
@@ -180,11 +100,6 @@ st.markdown(
         visibility: hidden;
     }
 
-
-    /* ================================
-       MAIN TITLE
-       ================================ */
-
     .main-title {
         color: #17345f !important;
         font-size: 32px !important;
@@ -193,18 +108,12 @@ st.markdown(
         margin-bottom: 32px;
     }
 
-
-    /* ================================
-       AICW
-       ================================ */
-
     .aicw-text {
         color: #17345f !important;
         font-size: 25px !important;
         font-weight: 800 !important;
         line-height: 1.55;
     }
-
 
     .capstone-text {
         color: #334155 !important;
@@ -213,11 +122,6 @@ st.markdown(
         margin-top: 42px;
     }
 
-
-    /* ================================
-       DESCRIPTION
-       ================================ */
-
     .description-title {
         color: #17345f !important;
         font-size: 24px !important;
@@ -225,21 +129,11 @@ st.markdown(
         margin-bottom: 12px;
     }
 
-
-    /* ================================
-       STREAMLIT TEXT
-       ================================ */
-
     .stMarkdown,
     .stMarkdown p,
     .stMarkdown li {
         color: #374151;
     }
-
-
-    /* ================================
-       CARDS
-       ================================ */
 
     div[data-testid="stVerticalBlockBorderWrapper"] {
         background: #ffffff !important;
@@ -249,7 +143,6 @@ st.markdown(
         padding: 8px !important;
     }
 
-
     .card-heading {
         color: #26364d !important;
         font-size: 15px !important;
@@ -257,17 +150,11 @@ st.markdown(
         margin-bottom: 16px;
     }
 
-
     .card-text {
         color: #4b5563 !important;
         font-size: 14px !important;
         line-height: 2.2 !important;
     }
-
-
-    /* ================================
-       BUTTON
-       ================================ */
 
     div.stButton > button {
         width: 100%;
@@ -286,35 +173,19 @@ st.markdown(
         background: #f8fafc !important;
     }
 
-
-    /* ================================
-       RADIO
-       ================================ */
-
     div[data-testid="stRadio"] label {
         color: #334155 !important;
         font-weight: 600 !important;
     }
-
-
-    /* ================================
-       UPLOADER
-       ================================ */
 
     div[data-testid="stFileUploader"] {
         background: #ffffff;
         border-radius: 12px;
     }
 
-
     label {
         color: #334155 !important;
     }
-
-
-    /* ================================
-       FOOTER
-       ================================ */
 
     .footer-text {
         color: #6b7280 !important;
@@ -322,11 +193,6 @@ st.markdown(
         font-size: 14px;
         margin-top: 32px;
     }
-
-
-    /* ================================
-       DETECTION PAGE
-       ================================ */
 
     .detect-title {
         color: #17345f !important;
@@ -336,18 +202,12 @@ st.markdown(
         margin-bottom: 5px;
     }
 
-
     .detect-subtitle {
         color: #64748b !important;
         text-align: center;
         font-size: 15px;
         margin-bottom: 25px;
     }
-
-
-    /* ================================
-       PUSH CARD
-       ================================ */
 
     .push-card {
         background: #eef6ff;
@@ -357,18 +217,12 @@ st.markdown(
         margin-bottom: 20px;
     }
 
-
     .push-title {
         color: #17345f !important;
         font-size: 17px;
         font-weight: 800;
         margin-bottom: 5px;
     }
-
-
-    /* ================================
-       SAFE BOX
-       ================================ */
 
     .safe-box {
         background: #ecfdf5;
@@ -380,11 +234,6 @@ st.markdown(
         margin-top: 15px;
     }
 
-
-    /* ================================
-       VIOLATION BOX
-       ================================ */
-
     .violation-box {
         background: #fef2f2;
         border: 1px solid #fecaca;
@@ -394,11 +243,6 @@ st.markdown(
         font-weight: 700;
         margin-top: 15px;
     }
-
-
-    /* ================================
-       MOBILE
-       ================================ */
 
     @media(max-width: 900px) {
 
@@ -556,6 +400,41 @@ def get_fcm_token():
 
 
 # ============================================================
+# SEND PUSH NOTIFICATION
+# ============================================================
+
+def send_push_notification(token, title, body):
+
+    if not firebase_ready:
+        return False
+
+    if not token:
+        return False
+
+    try:
+
+        message = messaging.Message(
+
+            notification=messaging.Notification(
+                title=title,
+                body=body
+            ),
+
+            token=token
+        )
+
+        messaging.send(message)
+
+        return True
+
+    except Exception as e:
+
+        st.session_state.notification_error = str(e)
+
+        return False
+
+
+# ============================================================
 # CHECK PPE VIOLATIONS
 # ============================================================
 
@@ -626,7 +505,6 @@ def handle_violation_alert(violations, source="image"):
         f"{violation_text}"
     )
 
-    # Send push notification
     if st.session_state.fcm_token:
 
         success = send_push_notification(
@@ -654,10 +532,6 @@ def handle_violation_alert(violations, source="image"):
 
 if st.session_state.page == "home":
 
-    # ========================================================
-    # TITLE
-    # ========================================================
-
     st.markdown(
         """
         <div class="main-title">
@@ -667,20 +541,10 @@ if st.session_state.page == "home":
         unsafe_allow_html=True
     )
 
-
-    # ========================================================
-    # TOP SECTION
-    # ========================================================
-
     left_col, right_col = st.columns(
         [0.38, 0.62],
         gap="large"
     )
-
-
-    # ========================================================
-    # LEFT
-    # ========================================================
 
     with left_col:
 
@@ -715,11 +579,6 @@ if st.session_state.page == "home":
             st.session_state.page = "predict"
 
             st.rerun()
-
-
-    # ========================================================
-    # RIGHT
-    # ========================================================
 
     with right_col:
 
@@ -756,24 +615,13 @@ if st.session_state.page == "home":
                 """
             )
 
-
     st.write("")
     st.write("")
-
-
-    # ========================================================
-    # BOTTOM CARDS
-    # ========================================================
 
     team_col, gmail_col, guide_col = st.columns(
         [1.25, 1.25, 0.75],
         gap="large"
     )
-
-
-    # ========================================================
-    # TEAM
-    # ========================================================
 
     with team_col:
 
@@ -795,11 +643,6 @@ if st.session_state.page == "home":
                 unsafe_allow_html=True
             )
 
-
-    # ========================================================
-    # GMAIL
-    # ========================================================
-
     with gmail_col:
 
         with st.container(border=True):
@@ -819,11 +662,6 @@ if st.session_state.page == "home":
                 """,
                 unsafe_allow_html=True
             )
-
-
-    # ========================================================
-    # GUIDE
-    # ========================================================
 
     with guide_col:
 
@@ -852,11 +690,6 @@ if st.session_state.page == "home":
                 unsafe_allow_html=True
             )
 
-
-    # ========================================================
-    # FOOTER
-    # ========================================================
-
     st.markdown(
         """
         <div class="footer-text">
@@ -872,10 +705,6 @@ if st.session_state.page == "home":
 # ============================================================
 
 else:
-
-    # ========================================================
-    # TITLE
-    # ========================================================
 
     st.markdown(
         """
@@ -947,7 +776,6 @@ else:
                             token_result
                         )
 
-
                     elif token_result == "PERMISSION_DENIED":
 
                         st.warning(
@@ -955,13 +783,11 @@ else:
                             "Please allow notifications in your browser."
                         )
 
-
                     elif token_result == "NOT_SUPPORTED":
 
                         st.warning(
                             "This browser does not support notifications."
                         )
-
 
                     elif token_result == "SERVICE_WORKER_NOT_SUPPORTED":
 
@@ -969,13 +795,11 @@ else:
                             "Browser service workers are not supported."
                         )
 
-
                     elif token_result == "NO_TOKEN":
 
                         st.warning(
                             "FCM token was not generated."
                         )
-
 
                     else:
 
@@ -988,6 +812,12 @@ else:
                         )
 
                         st.rerun()
+
+            else:
+
+                st.warning(
+                    "Waiting for notification permission/token..."
+                )
 
     else:
 
@@ -1063,11 +893,6 @@ else:
             gap="large"
         )
 
-
-        # ----------------------------------------------------
-        # INPUT
-        # ----------------------------------------------------
-
         with input_col:
 
             st.subheader("Upload Image")
@@ -1082,20 +907,17 @@ else:
                 key="image_upload"
             )
 
-
             if uploaded_image:
 
                 image = Image.open(
                     uploaded_image
                 ).convert("RGB")
 
-
                 st.image(
                     image,
                     caption="Input Image",
                     use_container_width=True
                 )
-
 
                 if st.button(
                     "🔍 Detect PPE",
@@ -1113,18 +935,14 @@ else:
                             verbose=False
                         )[0]
 
-
                     annotated = result.plot()
-
 
                     annotated = cv2.cvtColor(
                         annotated,
                         cv2.COLOR_BGR2RGB
                     )
 
-
                     detections = []
-
 
                     if result.boxes is not None:
 
@@ -1149,21 +967,15 @@ else:
                                 )
                             )
 
-
                     st.session_state.result_image = annotated
-
                     st.session_state.detections = detections
 
-
-                    # Check violations
                     violations = get_violations(
                         detections
                     )
 
                     st.session_state.image_violations = violations
 
-
-                    # Send notification
                     if violations:
 
                         handle_violation_alert(
@@ -1171,22 +983,15 @@ else:
                             "image"
                         )
 
-
-        # ----------------------------------------------------
-        # RESULT
-        # ----------------------------------------------------
-
         with result_col:
 
             st.subheader("Detection Result")
-
 
             if "result_image" not in st.session_state:
 
                 st.info(
                     "Upload an image and click Detect PPE."
                 )
-
 
             else:
 
@@ -1196,14 +1001,12 @@ else:
                     use_container_width=True
                 )
 
-
                 detections = st.session_state.detections
 
                 violations = st.session_state.get(
                     "image_violations",
                     []
                 )
-
 
                 if violations:
 
@@ -1233,7 +1036,6 @@ else:
                         unsafe_allow_html=True
                     )
 
-
                 else:
 
                     st.markdown(
@@ -1247,13 +1049,11 @@ else:
                         unsafe_allow_html=True
                     )
 
-
                 if detections:
 
                     st.write(
                         "### Detected Objects"
                     )
-
 
                     for name, confidence in detections:
 
@@ -1261,7 +1061,6 @@ else:
                             f"**{name}** — "
                             f"{confidence * 100:.1f}%"
                         )
-
 
                 else:
 
@@ -1280,13 +1079,11 @@ else:
             "Take a photo"
         )
 
-
         if camera_image:
 
             image = Image.open(
                 camera_image
             ).convert("RGB")
-
 
             if st.button(
                 "🔍 Detect PPE",
@@ -1304,15 +1101,12 @@ else:
                         verbose=False
                     )[0]
 
-
                 annotated = result.plot()
-
 
                 annotated = cv2.cvtColor(
                     annotated,
                     cv2.COLOR_BGR2RGB
                 )
-
 
                 st.image(
                     annotated,
@@ -1320,9 +1114,7 @@ else:
                     use_container_width=True
                 )
 
-
                 detections = []
-
 
                 if result.boxes is not None:
 
@@ -1347,11 +1139,9 @@ else:
                             )
                         )
 
-
                 violations = get_violations(
                     detections
                 )
-
 
                 if violations:
 
@@ -1364,7 +1154,6 @@ else:
                             )
                         )
                     )
-
 
                     st.markdown(
                         f"""
@@ -1381,12 +1170,10 @@ else:
                         unsafe_allow_html=True
                     )
 
-
                     handle_violation_alert(
                         violations,
                         "camera image"
                     )
-
 
                 else:
 
@@ -1401,13 +1188,11 @@ else:
                         unsafe_allow_html=True
                     )
 
-
                 if detections:
 
                     st.write(
                         "### Detected Objects"
                     )
-
 
                     for name, confidence in detections:
 
@@ -1415,7 +1200,6 @@ else:
                             f"**{name}** — "
                             f"{confidence * 100:.1f}%"
                         )
-
 
                 else:
 
@@ -1441,13 +1225,11 @@ else:
             key="video_upload"
         )
 
-
         if uploaded_video:
 
             st.video(
                 uploaded_video
             )
-
 
             if st.button(
                 "🎥 Detect PPE in Video",
@@ -1464,28 +1246,22 @@ else:
                         suffix=".mp4"
                     )
 
-
                     input_file.write(
                         uploaded_video.getbuffer()
                     )
 
                     input_file.close()
 
-
                     cap = cv2.VideoCapture(
                         input_file.name
                     )
-
 
                     fps = cap.get(
                         cv2.CAP_PROP_FPS
                     )
 
-
                     if fps <= 0:
-
                         fps = 20
-
 
                     width = int(
                         cap.get(
@@ -1493,29 +1269,24 @@ else:
                         )
                     )
 
-
                     height = int(
                         cap.get(
                             cv2.CAP_PROP_FRAME_HEIGHT
                         )
                     )
 
-
                     output_file = tempfile.NamedTemporaryFile(
                         delete=False,
                         suffix=".mp4"
                     )
 
-
                     output_path = output_file.name
 
                     output_file.close()
 
-
                     fourcc = cv2.VideoWriter_fourcc(
                         *"mp4v"
                     )
-
 
                     writer = cv2.VideoWriter(
                         output_path,
@@ -1524,25 +1295,14 @@ else:
                         (width, height)
                     )
 
-
                     video_violations = set()
-
-
-                    frame_count = 0
-
 
                     while True:
 
                         ret, frame = cap.read()
 
-
                         if not ret:
-
                             break
-
-
-                        frame_count += 1
-
 
                         result = model.predict(
                             frame,
@@ -1550,14 +1310,11 @@ else:
                             verbose=False
                         )[0]
 
-
                         annotated = result.plot()
-
 
                         writer.write(
                             annotated
                         )
-
 
                         if result.boxes is not None:
 
@@ -1571,13 +1328,11 @@ else:
                                     class_id
                                 ]
 
-
                                 normalized_name = (
                                     name.lower()
                                     .strip()
                                     .replace(" ", "_")
                                 )
-
 
                                 violation_names = {
 
@@ -1591,35 +1346,22 @@ else:
                                     "without_vest"
                                 }
 
-
-                                if (
-                                    normalized_name
-                                    in violation_names
-                                ):
+                                if normalized_name in violation_names:
 
                                     video_violations.add(
                                         name
                                     )
 
-
                     cap.release()
-
                     writer.release()
-
 
                 st.success(
                     "✅ Video processing completed."
                 )
 
-
                 st.video(
                     output_path
                 )
-
-
-                # ------------------------------------------------
-                # VIDEO VIOLATION
-                # ------------------------------------------------
 
                 if video_violations:
 
@@ -1628,7 +1370,6 @@ else:
                             video_violations
                         )
                     )
-
 
                     st.markdown(
                         f"""
@@ -1646,7 +1387,6 @@ else:
                         unsafe_allow_html=True
                     )
 
-
                     video_violation_list = [
                         (
                             violation,
@@ -1656,12 +1396,10 @@ else:
                         in video_violations
                     ]
 
-
                     handle_violation_alert(
                         video_violation_list,
                         "video"
                     )
-
 
                 else:
 
