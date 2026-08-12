@@ -399,39 +399,32 @@ def get_fcm_token():
     )
 
 
-# ============================================================
-# SEND PUSH NOTIFICATION
-# ============================================================
+# ========================================================
+# PUSH NOTIFICATION CARD
+# ========================================================
 
-def send_push_notification(token, title, body):
+with st.container(border=True):
 
-    if not firebase_ready:
-        return False
+    st.markdown("### 🔔 Safety Push Notifications")
 
-    if not token:
-        return False
+    st.write(
+        "Enable notifications to receive a safety alert "
+        "when GuardX-AI detects a PPE violation."
+    )
 
-    try:
 
-        message = messaging.Message(
+# ========================================================
+# ENABLE PUSH
+# ========================================================
 
-            notification=messaging.Notification(
-                title=title,
-                body=body
-            ),
+if not st.session_state.push_enabled:
 
-            token=token
-        )
-
-        messaging.send(message)
-
-        return True
-
-    except Exception as e:
-
-        st.session_state.notification_error = str(e)
-
-        return False
+    if st.button(
+        "🔔 Enable Push Notifications",
+        key="enable_push",
+        use_container_width=True
+    ):
+        ...
 
 
 # ============================================================
