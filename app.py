@@ -720,24 +720,14 @@ else:
     # PUSH NOTIFICATION CARD
     # ========================================================
 
-    st.markdown(
-        """
-        <div class="push-card">
+   with st.container(border=True):
 
-            <div class="push-title">
-                🔔 Safety Push Notifications
-            </div>
+    st.markdown("### 🔔 Safety Push Notifications")
 
-            <div>
-                Enable notifications to receive a safety alert
-                when GuardX-AI detects a PPE violation.
-            </div>
-
-        </div>
-        """,
-        unsafe_allow_html=True
+    st.write(
+        "Enable notifications to receive a safety alert "
+        "when GuardX-AI detects a PPE violation."
     )
-
 
     # ========================================================
     # ENABLE PUSH
