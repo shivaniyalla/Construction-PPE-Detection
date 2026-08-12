@@ -147,3 +147,117 @@ if uploaded_file is not None:
         else:
 
             st.success("✅ No PPE violations detected")
+
+# ==============================
+# VIDEO UPLOAD
+# ==============================
+
+st.divider()
+
+st.subheader("🎥 Video Detection")
+
+uploaded_video = st.file_uploader(
+    "Upload Construction Video",
+    type=["mp4", "avi", "mov", "mkv"],
+    key="video_uploader"
+)
+
+# ==============================
+# VIDEO DETECTION
+# ==============================
+
+if uploaded_video is not None:
+
+    st.video(uploaded_video)
+
+    if st.button("🎥 Detect PPE in Video", type="primary"):
+
+        with st.spinner("Processing video..."):
+
+            # Save uploaded video temporarily
+            tfile = tempfile.NamedTemporaryFile(
+                delete=False,
+                suffix=".mp4"
+            )
+
+            tfile.write(uploaded_video.read())
+            tfile.close()
+
+            # Open video
+            cap = cv2.VideoCapture(tfile.name)
+
+            width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+            height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+            fps = cap.get(cv2.CAP_PROP_FPS)
+
+            if fps <= 0:
+                fps = 25
+
+            total_frames = int(
+                cap.get(cv2.CAP_PROP_FRAME_COUNT)
+            )
+
+            output_path = tempfile.NamedTemporaryFile(
+                delete=False,
+                suffix=".mp4"
+            ).name
+
+            fourcc = cv2.VideoWriter_fourcc(
+                *"mp4v"
+            )
+
+            out = cv2.VideoWriter(
+                output_path,
+                fourcc,
+                fps,
+                (width, height)
+            )
+
+            progress_bar = st.progress(0)
+
+            frame_count = 0
+
+            while cap.isOpened():
+
+                ret, frame = cap.read()
+
+                if not ret:
+                    break
+
+                # YOLO detection
+                results = model.predict(
+                    source=frame,
+                    conf=0.30,
+                    iou=0.50,
+                    verbose=False
+                )
+
+                result = results[0]
+
+                # Draw bounding boxes
+                annotated_frame = result.plot()
+
+                # Write frame to output video
+                out.write(annotated_frame)
+
+                frame_count += 1
+
+                # Update progress
+                if total_frames > 0:
+
+                    progress = frame_count / total_frames
+
+                    progress_bar.progress(
+                        min(progress, 1.0)
+                    )
+
+            cap.release()
+            out.release()
+
+        progress_bar.empty()
+
+        st.success("✅ Video processing completed!")
+
+        st.subheader("🎬 Detection Result")
+
+        st.video(output_path)
