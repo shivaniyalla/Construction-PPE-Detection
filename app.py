@@ -419,7 +419,7 @@ if not st.session_state.push_enabled:
 
     if st.button(
         "🔔 Enable Push Notifications",
-        key="enable_push_prediction",
+       key="guardx_enable_push",
         use_container_width=True
     ):
         ...
@@ -738,7 +738,7 @@ if not st.session_state.push_enabled:
 
     if st.button(
         "🔔 Enable Push Notifications",
-        key="enable_push_prediction",
+        key="guardx_enable_push",
         use_container_width=True
     ):
 
