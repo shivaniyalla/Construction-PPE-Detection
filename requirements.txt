@@ -5,3 +5,4 @@ torchvision
 pillow
 opencv-python-headless==4.12.0.88
 firebase-admin
+streamlit-js-eval
