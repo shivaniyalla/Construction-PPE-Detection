@@ -6,411 +6,439 @@ import tempfile
 import subprocess
 import os
 
-
 # ============================================================
 # PAGE CONFIGURATION
 # ============================================================
 
 st.set_page_config(
-    page_title="GuardX AI",
+    page_title="GuardX-AI",
     page_icon="🦺",
-    layout="wide",
-    initial_sidebar_state="collapsed"
+    layout="wide"
 )
 
-
 # ============================================================
-# SESSION STATE - PAGE NAVIGATION
+# SESSION STATE
 # ============================================================
 
-if "show_project" not in st.session_state:
-    st.session_state.show_project = False
-
+if "page" not in st.session_state:
+    st.session_state.page = "home"
 
 # ============================================================
 # CUSTOM CSS
 # ============================================================
 
-st.markdown(
-    """
-    <style>
+st.markdown("""
+<style>
 
-    /* Remove default Streamlit top spacing */
-    .block-container {
-        padding-top: 1.5rem;
-        padding-bottom: 2rem;
-        max-width: 1500px;
-    }
+.block-container {
+    padding-top: 25px;
+    padding-bottom: 30px;
+    max-width: 1500px;
+}
 
-    /* Main outer design */
-    .main-frame {
-        border: 3px solid #111827;
-        border-radius: 8px;
-        overflow: hidden;
-        background: white;
-        box-shadow: 0 4px 18px rgba(0,0,0,0.08);
-    }
+/* ================= HOME PAGE ================= */
 
-    /* Header */
-    .main-header {
-        min-height: 115px;
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-        align-items: center;
-        text-align: center;
-        padding: 20px;
-        border-bottom: 3px solid #111827;
-        background: #ffffff;
-    }
+.home-container {
+    width: 100%;
+    border: 3px solid #111111;
+    border-radius: 5px;
+    overflow: hidden;
+    background: white;
+}
 
-    .main-header h1 {
-        margin: 0;
-        font-size: 38px;
-        font-weight: 800;
-        letter-spacing: 1px;
-        color: #111827;
-    }
+/* Header */
 
-    .main-header p {
-        margin: 7px 0 0 0;
-        font-size: 18px;
-        font-weight: 600;
-        color: #4b5563;
-    }
+.home-header {
+    height: 120px;
+    border-bottom: 3px solid #111111;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
 
-    /* Left side */
-    .left-panel {
-        min-height: 600px;
-        padding: 35px 28px;
-        border-right: 3px solid #111827;
-        display: flex;
-        flex-direction: column;
-        justify-content: space-between;
-        background: #ffffff;
-    }
+.home-header-title {
+    font-size: 42px;
+    font-weight: 800;
+    margin: 0;
+    color: #111111;
+}
 
-    .aicw-text {
-        font-size: 23px;
-        font-weight: 800;
-        color: #111827;
-        line-height: 1.25;
-    }
+.home-header-subtitle {
+    font-size: 18px;
+    margin-top: 5px;
+    color: #444444;
+}
 
-    .capstone-text {
-        margin-top: 18px;
-        font-size: 17px;
-        font-weight: 600;
-        color: #4b5563;
-    }
+/* Main left/right */
 
-    /* Right title */
-    .title-box {
-        min-height: 105px;
-        padding: 28px 35px;
-        border-bottom: 3px solid #111827;
-        display: flex;
-        align-items: center;
-    }
+.home-body {
+    display: grid;
+    grid-template-columns: 35% 65%;
+}
 
-    .title-box h2 {
-        margin: 0;
-        font-size: 30px;
-        font-weight: 800;
-        color: #111827;
-    }
+/* Left */
 
-    /* Description */
-    .description-box {
-        min-height: 255px;
-        padding: 30px 35px;
-        border-bottom: 3px solid #111827;
-    }
+.left-section {
+    min-height: 650px;
+    border-right: 3px solid #111111;
+    padding: 35px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
 
-    .section-heading {
-        font-size: 20px;
-        font-weight: 800;
-        margin-bottom: 14px;
-        color: #111827;
-    }
+.aicw {
+    font-size: 25px;
+    font-weight: 800;
+    line-height: 1.3;
+}
 
-    .description-text {
-        font-size: 16px;
-        line-height: 1.75;
-        color: #374151;
-        text-align: justify;
-    }
+.capstone {
+    margin-top: 15px;
+    font-size: 18px;
+    font-weight: 600;
+}
 
-    /* Bottom area */
-    .bottom-left {
-        min-height: 205px;
-        padding: 28px 35px;
-        border-right: 3px solid #111827;
-    }
+.predict-area {
+    margin-top: auto;
+    margin-bottom: 30px;
+}
 
-    .bottom-right {
-        min-height: 205px;
-        padding: 28px 35px;
-    }
+/* Right */
 
-    .member {
-        font-size: 15px;
-        line-height: 1.9;
-        color: #374151;
-    }
+.right-section {
+    min-height: 650px;
+}
 
-    .guide-name {
-        font-size: 18px;
-        font-weight: 700;
-        color: #111827;
-        margin-top: 15px;
-    }
+/* Title */
 
-    .guide-designation {
-        font-size: 15px;
-        color: #4b5563;
-        margin-top: 5px;
-    }
+.project-title {
+    height: 105px;
+    border-bottom: 3px solid #111111;
+    display: flex;
+    align-items: center;
+    padding-left: 35px;
+}
 
-    /* Predict button */
-    div.stButton > button {
-        width: 100%;
-        min-height: 52px;
-        border-radius: 7px;
-        border: 2px solid #111827;
-        font-size: 18px;
-        font-weight: 800;
-        letter-spacing: 0.5px;
-    }
+.project-title-text {
+    font-size: 32px;
+    font-weight: 800;
+}
 
-    /* Detection page */
-    .project-title {
-        text-align: center;
-        font-size: 38px;
-        font-weight: 800;
-        color: #111827;
-        margin-bottom: 5px;
-    }
+/* Description */
 
-    .project-subtitle {
-        text-align: center;
-        font-size: 17px;
-        color: #6b7280;
-        margin-bottom: 25px;
-    }
+.description-section {
+    min-height: 285px;
+    border-bottom: 3px solid #111111;
+    padding: 30px 35px;
+}
 
-    /* Metric cards */
-    div[data-testid="stMetric"] {
-        border: 1px solid #d1d5db;
-        border-radius: 8px;
-        padding: 10px;
-    }
+.section-heading {
+    font-size: 21px;
+    font-weight: 800;
+    margin-bottom: 15px;
+}
 
-    </style>
-    """,
-    unsafe_allow_html=True
-)
+.description-text {
+    font-size: 16px;
+    line-height: 1.7;
+    color: #333333;
+    text-align: justify;
+}
+
+/* Bottom */
+
+.bottom-section {
+    display: grid;
+    grid-template-columns: 55% 45%;
+    min-height: 230px;
+}
+
+.team-section {
+    padding: 30px 35px;
+    border-right: 3px solid #111111;
+}
+
+.guide-section {
+    padding: 30px 35px;
+}
+
+.team-member {
+    font-size: 15px;
+    line-height: 2;
+    color: #333333;
+}
+
+.guide-name {
+    font-size: 18px;
+    font-weight: 700;
+    margin-top: 15px;
+}
+
+.guide-designation {
+    font-size: 15px;
+    margin-top: 7px;
+    color: #444444;
+}
+
+/* Streamlit button */
+
+.predict-button button {
+    width: 100% !important;
+    height: 55px !important;
+    border-radius: 6px !important;
+    font-size: 19px !important;
+    font-weight: 800 !important;
+}
+
+/* ================= DETECTION PAGE ================= */
+
+.detection-title {
+    text-align: center;
+    font-size: 40px;
+    font-weight: 800;
+    margin-bottom: 5px;
+}
+
+.detection-subtitle {
+    text-align: center;
+    color: #555555;
+    font-size: 17px;
+    margin-bottom: 25px;
+}
+
+</style>
+""", unsafe_allow_html=True)
 
 
 # ============================================================
-# PAGE 1 - PROJECT INTRODUCTION
+# PAGE 1 — HOME
 # ============================================================
 
-if not st.session_state.show_project:
+if st.session_state.page == "home":
 
-    # Header
-    st.markdown(
-        """
-        <div class="main-frame">
+    st.markdown("""
+    <div class="home-container">
 
-            <div class="main-header">
-                <h1>GUARDX AI</h1>
-                <p>AI-Powered Construction PPE Detection System</p>
+        <!-- HEADER -->
+
+        <div class="home-header">
+
+            <div class="home-header-title">
+                GuardX-AI
+            </div>
+
+            <div class="home-header-subtitle">
+                AI-Powered Construction PPE Detection System
             </div>
 
         </div>
-        """,
-        unsafe_allow_html=True
-    )
 
-    # Main two-column structure
-    left_col, right_col = st.columns(
-        [0.37, 0.63],
-        gap="small"
-    )
 
-    # ========================================================
-    # LEFT SIDE
-    # ========================================================
+        <!-- BODY -->
 
-    with left_col:
+        <div class="home-body">
 
-        st.markdown(
-            """
-            <div class="left-panel">
+            <!-- LEFT SECTION -->
+
+            <div class="left-section">
 
                 <div>
-                    <div class="aicw-text">
-                        AI Career for Women<br>
+
+                    <div class="aicw">
+                        AI Career for Women
+                        <br>
                         (AICW)
                     </div>
 
-                    <div class="capstone-text">
+                    <div class="capstone">
                         Capstone Project
                     </div>
+
+                </div>
+
+                <div class="predict-area">
+
+                    <div style="
+                        font-size:20px;
+                        font-weight:800;
+                        margin-bottom:12px;
+                    ">
+                        Start Detection
+                    </div>
+
+                    <!-- PREDICT BUTTON IS ADDED BELOW -->
+
                 </div>
 
             </div>
-            """,
-            unsafe_allow_html=True
-        )
 
-        # PREDICT button
-        if st.button(
-            "🚀 PREDICT",
-            key="predict_button",
-            type="primary",
-            use_container_width=True
-        ):
-            st.session_state.show_project = True
-            st.rerun()
+
+            <!-- RIGHT SECTION -->
+
+            <div class="right-section">
+
+                <!-- TITLE -->
+
+                <div class="project-title">
+
+                    <div class="project-title-text">
+                        GuardX-AI
+                    </div>
+
+                </div>
+
+
+                <!-- DESCRIPTION -->
+
+                <div class="description-section">
+
+                    <div class="section-heading">
+                        DESCRIPTION
+                    </div>
+
+                    <div class="description-text">
+
+                        Construction sites involve high-risk activities where
+                        proper Personal Protective Equipment (PPE) is essential
+                        for worker safety. However, manually monitoring whether
+                        every worker is wearing the required PPE continuously is
+                        difficult, time-consuming, and prone to human error.
+                        GuardX AI is an AI-powered Construction PPE Detection
+                        System designed to automatically identify safety equipment
+                        such as hardhats, masks, and safety vests from
+                        construction-site images and videos. Using YOLO-based
+                        object detection, the system detects PPE items and
+                        identifies potential safety violations. The solution
+                        provides visual detection results, helping improve
+                        safety monitoring, reduce manual inspection effort,
+                        and support faster identification of unsafe working
+                        conditions.
+
+                    </div>
+
+                </div>
+
+
+                <!-- TEAM + GUIDE -->
+
+                <div class="bottom-section">
+
+                    <div class="team-section">
+
+                        <div class="section-heading">
+                            TEAM MEMBERS
+                        </div>
+
+                        <div class="team-member">
+
+                            <b>1.</b>
+                            Y.D.V.Sivani -
+                            yallashivani@gmail.com
+
+                            <br>
+
+                            <b>2.</b>
+                            V.L.S.Asritha -
+                            Asrithavantipalli@gmail.com
+
+                            <br>
+
+                            <b>3.</b>
+                            R.Likhitha -
+                            likhitharayudu@gmail.com
+
+                            <br>
+
+                            <b>4.</b>
+                            S.Poojitha sri -
+                            pujithasari@gmail.com
+
+                        </div>
+
+                    </div>
+
+
+                    <div class="guide-section">
+
+                        <div class="section-heading">
+                            GUIDE
+                        </div>
+
+                        <div class="guide-name">
+                            MD.Abdul Aziz
+                        </div>
+
+                        <div class="guide-designation">
+                            Trainer, Co-Lead-AICW
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+    """, unsafe_allow_html=True)
 
 
     # ========================================================
-    # RIGHT SIDE
+    # PREDICT BUTTON
     # ========================================================
 
-    with right_col:
+    st.markdown(
+        '<div class="predict-button">',
+        unsafe_allow_html=True
+    )
 
-        # TITLE
-        st.markdown(
-            """
-            <div class="title-box">
-                <h2>Construction PPE Detection</h2>
-            </div>
-            """,
-            unsafe_allow_html=True
-        )
+    if st.button(
+        "🚀 PREDICT",
+        type="primary",
+        key="predict_home",
+        use_container_width=True
+    ):
+        st.session_state.page = "detection"
+        st.rerun()
 
-        # DESCRIPTION
-        st.markdown(
-            """
-            <div class="description-box">
-
-                <div class="section-heading">
-                    DESCRIPTION
-                </div>
-
-                <div class="description-text">
-
-                    Construction sites involve high-risk activities where
-                    proper Personal Protective Equipment (PPE) is essential
-                    for worker safety. However, manually monitoring whether
-                    every worker is wearing the required PPE continuously is
-                    difficult, time-consuming, and prone to human error.
-                    GuardX AI is an AI-powered Construction PPE Detection
-                    System designed to automatically identify safety equipment
-                    such as hardhats, masks, and safety vests from construction
-                    site images and videos. Using YOLO-based object detection,
-                    the system detects PPE items and identifies potential
-                    safety violations. The solution provides visual detection
-                    results, helping improve safety monitoring, reduce manual
-                    inspection effort, and support faster identification of
-                    unsafe working conditions.
-
-                </div>
-
-            </div>
-            """,
-            unsafe_allow_html=True
-        )
-
-        # ====================================================
-        # BOTTOM SECTION
-        # ====================================================
-
-        team_col, guide_col = st.columns(
-            [0.55, 0.45],
-            gap="small"
-        )
-
-        # TEAM MEMBERS
-        with team_col:
-
-            st.markdown(
-                """
-                <div class="bottom-left">
-
-                    <div class="section-heading">
-                        TEAM MEMBERS
-                    </div>
-
-                    <div class="member">
-                        <b>1.</b> Member Name — Email<br>
-                        <b>2.</b> Member Name — Email<br>
-                        <b>3.</b> Member Name — Email<br>
-                        <b>4.</b> Member Name — Email
-                    </div>
-
-                </div>
-                """,
-                unsafe_allow_html=True
-            )
-
-        # GUIDE
-        with guide_col:
-
-            st.markdown(
-                """
-                <div class="bottom-right">
-
-                    <div class="section-heading">
-                        GUIDE
-                    </div>
-
-                    <div class="guide-name">
-                        Guide Name
-                    </div>
-
-                    <div class="guide-designation">
-                        Designation
-                    </div>
-
-                </div>
-                """,
-                unsafe_allow_html=True
-            )
+    st.markdown(
+        '</div>',
+        unsafe_allow_html=True
+    )
 
 
 # ============================================================
-# PAGE 2 - ACTUAL PPE DETECTION APPLICATION
+# PAGE 2 — PPE DETECTION
 # ============================================================
 
 else:
 
     # ========================================================
-    # BACK TO HOME
+    # BACK BUTTON
     # ========================================================
 
     if st.button(
         "⬅️ Back to Home",
         key="back_home"
     ):
-        st.session_state.show_project = False
+        st.session_state.page = "home"
         st.rerun()
 
 
     # ========================================================
-    # PROJECT TITLE
+    # TITLE
     # ========================================================
 
     st.markdown(
         """
-        <div class="project-title">
-            🦺 GUARDX AI
+        <div class="detection-title">
+            🦺 GuardX-AI
         </div>
 
-        <div class="project-subtitle">
+        <div class="detection-subtitle">
             Construction PPE Detection System
         </div>
         """,
@@ -418,7 +446,10 @@ else:
     )
 
 
-    st.divider()
+    st.write(
+        "Upload a construction-site image or video to detect PPE "
+        "equipment and identify potential safety violations."
+    )
 
 
     # ========================================================
@@ -430,10 +461,12 @@ else:
 
     @st.cache_resource
     def load_model():
+
         return YOLO(MODEL_PATH)
 
 
     try:
+
         model = load_model()
 
     except Exception as e:
@@ -443,22 +476,12 @@ else:
         )
 
         st.info(
-            "Make sure that 'best.pt' is present in the project folder."
+            "Make sure 'best.pt' is present in the same project folder as app.py."
         )
 
         st.exception(e)
 
         st.stop()
-
-
-    # ========================================================
-    # DESCRIPTION
-    # ========================================================
-
-    st.write(
-        "Upload a construction-site image or video to detect PPE "
-        "equipment and identify potential safety violations."
-    )
 
 
     # ========================================================
@@ -484,7 +507,9 @@ else:
 
         image = Image.open(uploaded_file)
 
+
         st.subheader("Original Image")
+
 
         st.image(
             image,
@@ -495,7 +520,7 @@ else:
         if st.button(
             "🔍 Detect PPE",
             type="primary",
-            key="image_detect"
+            key="detect_image"
         ):
 
             with st.spinner(
@@ -519,9 +544,11 @@ else:
 
             annotated_image = result.plot()
 
+
             st.subheader(
                 "🎯 Detection Result"
             )
+
 
             st.image(
                 annotated_image,
@@ -538,6 +565,7 @@ else:
                 "📊 Detection Summary"
             )
 
+
             detected_classes = []
 
 
@@ -549,6 +577,7 @@ else:
                         cls.item()
                     )
 
+
                     detected_classes.append(
                         model.names[class_id]
                     )
@@ -557,6 +586,7 @@ else:
             if detected_classes:
 
                 counts = {}
+
 
                 for name in detected_classes:
 
@@ -605,9 +635,11 @@ else:
 
 
             detected_violations = [
+
                 name
                 for name in detected_classes
                 if name in violations
+
             ]
 
 
@@ -616,6 +648,7 @@ else:
                 st.error(
                     "⚠️ SAFETY VIOLATION DETECTED"
                 )
+
 
                 st.write(
                     "Detected violations:",
@@ -631,9 +664,9 @@ else:
                 )
 
 
-    # ========================================================
+    # ============================================================
     # VIDEO UPLOAD
-    # ========================================================
+    # ============================================================
 
     st.divider()
 
@@ -649,9 +682,9 @@ else:
     )
 
 
-    # ========================================================
+    # ============================================================
     # VIDEO DETECTION
-    # ========================================================
+    # ============================================================
 
     if uploaded_video is not None:
 
@@ -659,29 +692,33 @@ else:
             "🎬 Original Video"
         )
 
-        # Show uploaded video
-        st.video(uploaded_video)
+
+        st.video(
+            uploaded_video
+        )
 
 
         if st.button(
             "🎥 Detect PPE in Video",
             type="primary",
-            key="video_detect"
+            key="detect_video"
         ):
 
             with st.spinner(
                 "🤖 Processing video... Please wait."
             ):
 
-                # =================================================
+                # =============================================
                 # SAVE UPLOADED VIDEO
-                # =================================================
+                # =============================================
 
                 file_extension = os.path.splitext(
                     uploaded_video.name
                 )[1]
 
+
                 if not file_extension:
+
                     file_extension = ".mp4"
 
 
@@ -695,12 +732,13 @@ else:
                     uploaded_video.read()
                 )
 
+
                 input_file.close()
 
 
-                # =================================================
+                # =============================================
                 # OPEN VIDEO
-                # =================================================
+                # =============================================
 
                 cap = cv2.VideoCapture(
                     input_file.name
@@ -727,6 +765,7 @@ else:
 
 
                 if fps <= 0:
+
                     fps = 25
 
 
@@ -737,9 +776,9 @@ else:
                 )
 
 
-                # =================================================
-                # RAW OUTPUT VIDEO
-                # =================================================
+                # =============================================
+                # RAW OUTPUT
+                # =============================================
 
                 raw_output = tempfile.NamedTemporaryFile(
                     delete=False,
@@ -749,12 +788,13 @@ else:
 
                 raw_output_path = raw_output.name
 
+
                 raw_output.close()
 
 
-                # =================================================
+                # =============================================
                 # VIDEO WRITER
-                # =================================================
+                # =============================================
 
                 fourcc = cv2.VideoWriter_fourcc(
                     *"mp4v"
@@ -769,18 +809,18 @@ else:
                 )
 
 
-                # =================================================
-                # PROGRESS BAR
-                # =================================================
+                # =============================================
+                # PROGRESS
+                # =============================================
 
                 progress_bar = st.progress(0)
 
                 frame_count = 0
 
 
-                # =================================================
-                # PROCESS VIDEO FRAME BY FRAME
-                # =================================================
+                # =============================================
+                # FRAME-BY-FRAME DETECTION
+                # =============================================
 
                 while cap.isOpened():
 
@@ -788,12 +828,11 @@ else:
 
 
                     if not ret:
+
                         break
 
 
-                    # =============================================
-                    # YOLO DETECTION
-                    # =============================================
+                    # YOLO detection
 
                     results = model.predict(
                         source=frame,
@@ -803,16 +842,12 @@ else:
                     )
 
 
-                    # =============================================
-                    # DRAW DETECTIONS
-                    # =============================================
+                    # Draw detections
 
                     annotated_frame = results[0].plot()
 
 
-                    # =============================================
-                    # WRITE FRAME
-                    # =============================================
+                    # Write frame
 
                     out.write(
                         annotated_frame
@@ -822,9 +857,7 @@ else:
                     frame_count += 1
 
 
-                    # =============================================
-                    # UPDATE PROGRESS
-                    # =============================================
+                    # Progress
 
                     if total_frames > 0:
 
@@ -839,9 +872,9 @@ else:
                         )
 
 
-                # =================================================
-                # RELEASE VIDEO
-                # =================================================
+                # =============================================
+                # RELEASE
+                # =============================================
 
                 cap.release()
 
@@ -850,9 +883,9 @@ else:
                 progress_bar.empty()
 
 
-                # =================================================
-                # CONVERT OUTPUT TO BROWSER-FRIENDLY MP4
-                # =================================================
+                # =============================================
+                # FINAL MP4
+                # =============================================
 
                 final_output = tempfile.NamedTemporaryFile(
                     delete=False,
@@ -862,10 +895,12 @@ else:
 
                 final_output_path = final_output.name
 
+
                 final_output.close()
 
 
                 ffmpeg_command = [
+
                     "ffmpeg",
                     "-y",
                     "-i",
@@ -877,6 +912,7 @@ else:
                     "-movflags",
                     "+faststart",
                     final_output_path
+
                 ]
 
 
@@ -887,9 +923,9 @@ else:
                 )
 
 
-                # =================================================
-                # CHECK CONVERSION
-                # =================================================
+                # =============================================
+                # RESULT
+                # =============================================
 
                 if conversion.returncode != 0:
 
@@ -903,7 +939,6 @@ else:
                             errors="ignore"
                         )
                     )
-
 
                 else:
 
@@ -922,15 +957,16 @@ else:
                     )
 
 
-                # =================================================
+                # =============================================
                 # CLEANUP
-                # =================================================
+                # =============================================
 
                 try:
 
                     os.remove(
                         input_file.name
                     )
+
 
                     os.remove(
                         raw_output_path
@@ -948,6 +984,6 @@ else:
     st.divider()
 
     st.caption(
-        "🦺 GuardX AI • Construction PPE Detection System • "
+        "🦺 GuardX-AI • Construction PPE Detection System • "
         "Powered by YOLO & Streamlit"
     )
