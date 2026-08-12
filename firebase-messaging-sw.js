@@ -19,20 +19,17 @@ const messaging = firebase.messaging();
 
 messaging.onBackgroundMessage(function(payload) {
 
-  console.log(
-    "[firebase-messaging-sw.js] Background message received:",
-    payload
-  );
-
   const notificationTitle =
-    payload.notification?.title || "🚨 GuardX-AI Alert";
+    payload.notification?.title ||
+    "🚨 GuardX-AI Safety Alert";
 
   const notificationOptions = {
+
     body:
       payload.notification?.body ||
-      "PPE violation detected. Please take immediate action.",
-    icon: "/favicon.ico",
-    badge: "/favicon.ico"
+      "PPE violation detected.",
+
+    icon: "/favicon.png"
   };
 
   self.registration.showNotification(
