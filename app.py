@@ -421,7 +421,7 @@ if not st.session_state.push_enabled:
 
     if st.button(
         "🔔 Enable Push Notifications",
-        key="enable_push",
+        key="enable_push_prediction",
         use_container_width=True
     ):
         ...
