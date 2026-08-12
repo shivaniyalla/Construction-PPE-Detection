@@ -411,8 +411,6 @@ with st.container(border=True):
         "Enable notifications to receive a safety alert "
         "when GuardX-AI detects a PPE violation."
     )
-
-
 # ========================================================
 # ENABLE PUSH
 # ========================================================
