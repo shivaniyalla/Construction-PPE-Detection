@@ -3,6 +3,8 @@ from ultralytics import YOLO
 from PIL import Image
 import cv2
 import tempfile
+import subprocess
+import os
 
 # ==============================
 # PAGE CONFIGURATION
@@ -165,57 +167,72 @@ uploaded_video = st.file_uploader(
 # ==============================
 # VIDEO DETECTION
 # ==============================
-
 if uploaded_video is not None:
 
+    st.subheader("🎥 Video Detection")
+
+    # Show original video
     st.video(uploaded_video)
 
     if st.button("🎥 Detect PPE in Video", type="primary"):
 
-        with st.spinner("Processing video..."):
+        with st.spinner("Processing video... Please wait."):
 
-            # Save uploaded video temporarily
-            tfile = tempfile.NamedTemporaryFile(
+            # Save uploaded video
+            input_file = tempfile.NamedTemporaryFile(
                 delete=False,
                 suffix=".mp4"
             )
 
-            tfile.write(uploaded_video.read())
-            tfile.close()
+            input_file.write(uploaded_video.read())
+            input_file.close()
 
             # Open video
-            cap = cv2.VideoCapture(tfile.name)
+            cap = cv2.VideoCapture(input_file.name)
 
-            width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
-            height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
-            fps = cap.get(cv2.CAP_PROP_FPS)
+            width = int(
+                cap.get(cv2.CAP_PROP_FRAME_WIDTH)
+            )
+
+            height = int(
+                cap.get(cv2.CAP_PROP_FRAME_HEIGHT)
+            )
+
+            fps = cap.get(
+                cv2.CAP_PROP_FPS
+            )
 
             if fps <= 0:
                 fps = 25
 
-            total_frames = int(
-                cap.get(cv2.CAP_PROP_FRAME_COUNT)
-            )
-
-            output_path = tempfile.NamedTemporaryFile(
+            # Temporary YOLO output
+            raw_output = tempfile.NamedTemporaryFile(
                 delete=False,
                 suffix=".mp4"
-            ).name
+            )
 
+            raw_output_path = raw_output.name
+            raw_output.close()
+
+            # Use mp4v for OpenCV output
             fourcc = cv2.VideoWriter_fourcc(
                 *"mp4v"
             )
 
             out = cv2.VideoWriter(
-                output_path,
+                raw_output_path,
                 fourcc,
                 fps,
                 (width, height)
             )
 
-            progress_bar = st.progress(0)
+            total_frames = int(
+                cap.get(cv2.CAP_PROP_FRAME_COUNT)
+            )
 
             frame_count = 0
+
+            progress_bar = st.progress(0)
 
             while cap.isOpened():
 
@@ -232,32 +249,95 @@ if uploaded_video is not None:
                     verbose=False
                 )
 
-                result = results[0]
+                # Draw detections
+                annotated_frame = results[0].plot()
 
-                # Draw bounding boxes
-                annotated_frame = result.plot()
-
-                # Write frame to output video
+                # Write frame
                 out.write(annotated_frame)
 
                 frame_count += 1
 
-                # Update progress
                 if total_frames > 0:
 
-                    progress = frame_count / total_frames
-
                     progress_bar.progress(
-                        min(progress, 1.0)
+                        min(
+                            frame_count / total_frames,
+                            1.0
+                        )
                     )
 
             cap.release()
             out.release()
 
-        progress_bar.empty()
+            progress_bar.empty()
 
-        st.success("✅ Video processing completed!")
+            # ==========================================
+            # CONVERT TO BROWSER-FRIENDLY MP4
+            # ==========================================
 
-        st.subheader("🎬 Detection Result")
+            final_output = tempfile.NamedTemporaryFile(
+                delete=False,
+                suffix=".mp4"
+            )
 
-        st.video(output_path)
+            final_output_path = final_output.name
+            final_output.close()
+
+            ffmpeg_command = [
+                "ffmpeg",
+                "-y",
+                "-i",
+                raw_output_path,
+                "-vcodec",
+                "libx264",
+                "-pix_fmt",
+                "yuv420p",
+                "-movflags",
+                "+faststart",
+                final_output_path
+            ]
+
+            conversion = subprocess.run(
+                ffmpeg_command,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE
+            )
+
+            # ==========================================
+            # CHECK CONVERSION
+            # ==========================================
+
+            if conversion.returncode != 0:
+
+                st.error(
+                    "❌ Video conversion failed."
+                )
+
+                st.code(
+                    conversion.stderr.decode(
+                        errors="ignore"
+                    )
+                )
+
+            else:
+
+                st.success(
+                    "✅ Video detection completed!"
+                )
+
+                st.subheader(
+                    "🎯 Detection Result"
+                )
+
+                st.video(
+                    final_output_path
+                )
+
+            # Cleanup
+            try:
+                os.remove(input_file.name)
+                os.remove(raw_output_path)
+            except:
+                pass
+
+
