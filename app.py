@@ -1,47 +1,140 @@
+import streamlit as st
+from ultralytics import YOLO
+from PIL import Image
+import numpy as np
+import cv2
+import tempfile
+import os
+
+
+st.set_page_config(
+    page_title="GuardX-AI",
+    page_icon="🦺",
+    layout="wide"
+)
+
+
+# Session State
+if "page" not in st.session_state:
+    st.session_state.page = "home"
+
+
 # ============================================================
-# PAGE 1 — HOME
+# PAGE 1
 # ============================================================
 
 if st.session_state.page == "home":
 
-    # ---------------- TITLE ----------------
-
     st.markdown(
-        "<h1 style='text-align:center; color:#172b55;'>"
-        "🦺 GuardX-AI – Construction PPE Detection System"
-        "</h1>",
+        """
+        <style>
+
+        .stApp {
+            background-color: #f5f6fa;
+        }
+
+        .block-container {
+            max-width: 1400px;
+            padding-top: 20px;
+            padding-left: 7%;
+            padding-right: 7%;
+        }
+
+        .main-title {
+            text-align: center;
+            color: #172b55;
+            font-size: 31px;
+            font-weight: 800;
+            margin-bottom: 35px;
+        }
+
+        .aicw {
+            color: #172b55;
+            font-size: 25px;
+            font-weight: 800;
+            line-height: 1.6;
+        }
+
+        .capstone {
+            color: #303c52;
+            font-size: 22px;
+            font-weight: 700;
+            margin-top: 40px;
+        }
+
+        .description-title {
+            color: #172b55;
+            font-size: 23px;
+            font-weight: 800;
+            margin-bottom: 12px;
+        }
+
+        .description {
+            color: #626b78;
+            font-size: 15px;
+            line-height: 1.65;
+        }
+
+        .card {
+            background: white;
+            border: 1px solid #e0e3e8;
+            border-radius: 17px;
+            padding: 20px;
+            min-height: 235px;
+        }
+
+        .card-title {
+            color: #303743;
+            font-size: 14px;
+            font-weight: 800;
+            margin-bottom: 20px;
+        }
+
+        .card-text {
+            color: #4d5562;
+            font-size: 14px;
+            line-height: 2.5;
+        }
+
+        </style>
+        """,
         unsafe_allow_html=True
     )
 
-    st.write("")
 
-    # ---------------- TOP SECTION ----------------
+    # TITLE
 
-    left_col, right_col = st.columns([0.36, 0.64], gap="large")
+    st.markdown(
+        """
+        <div class="main-title">
+            🦺 GuardX-AI – Construction PPE Detection System
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
 
-    # ---------------- LEFT ----------------
 
-    with left_col:
+    # TOP SECTION
+
+    left, right = st.columns(
+        [0.36, 0.64],
+        gap="large"
+    )
+
+
+    # LEFT SIDE
+
+    with left:
 
         st.markdown(
             """
-            <div style="
-                color:#172b55;
-                font-size:25px;
-                font-weight:800;
-                line-height:1.55;
-            ">
+            <div class="aicw">
                 AI Career for Women
                 <br>
                 (AICW)
             </div>
 
-            <div style="
-                color:#303c52;
-                font-size:22px;
-                font-weight:700;
-                margin-top:42px;
-            ">
+            <div class="capstone">
                 Capstone Project
             </div>
             """,
@@ -54,34 +147,23 @@ if st.session_state.page == "home":
             "🔍 PREDICT",
             use_container_width=True
         ):
+
             st.session_state.page = "predict"
             st.rerun()
 
-    # ---------------- PROJECT DESCRIPTION ----------------
 
-    with right_col:
+    # RIGHT SIDE
+
+    with right:
 
         st.markdown(
             """
-            <div style="
-                color:#172b55;
-                font-size:23px;
-                font-weight:800;
-                margin-bottom:12px;
-            ">
+            <div class="description-title">
                 Project Description
             </div>
-            """,
-            unsafe_allow_html=True
-        )
 
-        st.markdown(
-            """
-            <div style="
-                color:#626b78;
-                font-size:15px;
-                line-height:1.65;
-            ">
+            <div class="description">
+
                 Construction sites involve high-risk activities where
                 proper Personal Protective Equipment (PPE) is essential
                 for worker safety. However, manually monitoring whether
@@ -99,51 +181,39 @@ if st.session_state.page == "home":
                 improve safety monitoring, reduce manual inspection
                 effort, and support faster identification of unsafe
                 working conditions.
+
             </div>
             """,
             unsafe_allow_html=True
         )
 
+
     st.write("")
     st.write("")
 
-    # ========================================================
+
     # BOTTOM CARDS
-    # ========================================================
 
-    team_col, gmail_col, guide_col = st.columns(
+    team, gmail, guide = st.columns(
         [1.25, 1.25, 0.75],
         gap="large"
     )
 
-    # ---------------- TEAM MEMBERS ----------------
 
-    with team_col:
+    # TEAM MEMBERS
+
+    with team:
 
         st.markdown(
             """
-            <div style="
-                background:white;
-                border:1px solid #e0e3e8;
-                border-radius:17px;
-                padding:20px;
-                min-height:235px;
-            ">
+            <div class="card">
 
-                <div style="
-                    color:#303743;
-                    font-size:14px;
-                    font-weight:800;
-                    margin-bottom:20px;
-                ">
+                <div class="card-title">
                     TEAM MEMBERS
                 </div>
 
-                <div style="
-                    color:#4d5562;
-                    font-size:14px;
-                    line-height:2.7;
-                ">
+                <div class="card-text">
+
                     1. Y.D.V.Sivani
                     <br>
                     2. V.L.S.Asritha
@@ -151,6 +221,7 @@ if st.session_state.page == "home":
                     3. R.Likhitha
                     <br>
                     4. S.Poojitha sri
+
                 </div>
 
             </div>
@@ -158,34 +229,21 @@ if st.session_state.page == "home":
             unsafe_allow_html=True
         )
 
-    # ---------------- GMAIL ----------------
 
-    with gmail_col:
+    # GMAIL
+
+    with gmail:
 
         st.markdown(
             """
-            <div style="
-                background:white;
-                border:1px solid #e0e3e8;
-                border-radius:17px;
-                padding:20px;
-                min-height:235px;
-            ">
+            <div class="card">
 
-                <div style="
-                    color:#303743;
-                    font-size:14px;
-                    font-weight:800;
-                    margin-bottom:20px;
-                ">
+                <div class="card-title">
                     GMAIL
                 </div>
 
-                <div style="
-                    color:#4d5562;
-                    font-size:14px;
-                    line-height:2.7;
-                ">
+                <div class="card-text">
+
                     yallashivani@gmail.com
                     <br>
                     Asrithavantipalli@gmail.com
@@ -193,6 +251,7 @@ if st.session_state.page == "home":
                     likhitharayudu@gmail.com
                     <br>
                     pujithasari@gmail.com
+
                 </div>
 
             </div>
@@ -200,71 +259,34 @@ if st.session_state.page == "home":
             unsafe_allow_html=True
         )
 
-    # ---------------- GUIDE ----------------
 
-    with guide_col:
+    # GUIDE
+
+    with guide:
 
         st.markdown(
             """
-            <div style="
-                background:white;
-                border:1px solid #e0e3e8;
-                border-radius:17px;
-                padding:20px;
-                min-height:235px;
-            ">
+            <div class="card">
 
-                <div style="
-                    color:#303743;
-                    font-size:14px;
-                    font-weight:800;
-                    margin-bottom:25px;
-                ">
+                <div class="card-title">
                     GUIDE NAME
                 </div>
 
-                <div style="
-                    color:#4d5562;
-                    font-size:15px;
-                    margin-bottom:30px;
-                ">
+                <div class="card-text">
+
                     MD.Abdul Aziz
-                </div>
 
-                <div style="
-                    color:#303743;
-                    font-size:14px;
-                    font-weight:800;
-                    margin-bottom:20px;
-                ">
-                    Designation
-                </div>
+                    <br><br>
 
-                <div style="
-                    color:#4d5562;
-                    font-size:14px;
-                    line-height:1.7;
-                ">
+                    <b>Designation</b>
+
+                    <br><br>
+
                     Trainer, Co-Lead-AICW
+
                 </div>
 
             </div>
             """,
             unsafe_allow_html=True
         )
-
-    # ---------------- FOOTER ----------------
-
-    st.markdown(
-        """
-        <div style="
-            text-align:center;
-            color:#737b87;
-            font-size:14px;
-            margin-top:35px;
-        ">
-            GuardX-AI – Construction PPE Detection System
-        </div>
-        """,
-        unsafe_allow_html=True
-    )
