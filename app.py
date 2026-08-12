@@ -190,103 +190,62 @@ if st.session_state.page == "home":
 
     st.write("")
     st.write("")
+# ============================================================
+# BOTTOM CARDS
+# ============================================================
+
+team_col, gmail_col, guide_col = st.columns(
+    [1.25, 1.25, 0.75],
+    gap="large"
+)
 
 
-    # BOTTOM CARDS
+# ============================================================
+# TEAM MEMBERS CARD
+# ============================================================
 
-    team, gmail, guide = st.columns(
-        [1.25, 1.25, 0.75],
-        gap="large"
-    )
+with team_col:
 
+    with st.container(border=True):
 
-    # TEAM MEMBERS
+        st.markdown("### TEAM MEMBERS")
 
-    with team:
-
-        st.markdown(
-            """
-            <div class="card">
-
-                <div class="card-title">
-                    TEAM MEMBERS
-                </div>
-
-                <div class="card-text">
-
-                    1. Y.D.V.Sivani
-                    <br>
-                    2. V.L.S.Asritha
-                    <br>
-                    3. R.Likhitha
-                    <br>
-                    4. S.Poojitha sri
-
-                </div>
-
-            </div>
-            """,
-            unsafe_allow_html=True
-        )
+        st.write("1. Y.D.V.Sivani")
+        st.write("2. V.L.S.Asritha")
+        st.write("3. R.Likhitha")
+        st.write("4. S.Poojitha sri")
 
 
-    # GMAIL
+# ============================================================
+# GMAIL CARD
+# ============================================================
 
-    with gmail:
+with gmail_col:
 
-        st.markdown(
-            """
-            <div class="card">
+    with st.container(border=True):
 
-                <div class="card-title">
-                    GMAIL
-                </div>
+        st.markdown("### GMAIL")
 
-                <div class="card-text">
-
-                    yallashivani@gmail.com
-                    <br>
-                    Asrithavantipalli@gmail.com
-                    <br>
-                    likhitharayudu@gmail.com
-                    <br>
-                    pujithasari@gmail.com
-
-                </div>
-
-            </div>
-            """,
-            unsafe_allow_html=True
-        )
+        st.write("yallashivani@gmail.com")
+        st.write("Asrithavantipalli@gmail.com")
+        st.write("likhitharayudu@gmail.com")
+        st.write("pujithasari@gmail.com")
 
 
-    # GUIDE
+# ============================================================
+# GUIDE CARD
+# ============================================================
 
-    with guide:
+with guide_col:
 
-        st.markdown(
-            """
-            <div class="card">
+    with st.container(border=True):
 
-                <div class="card-title">
-                    GUIDE NAME
-                </div>
+        st.markdown("### GUIDE NAME")
 
-                <div class="card-text">
+        st.write("MD.Abdul Aziz")
 
-                    MD.Abdul Aziz
+        st.markdown("### Designation")
 
-                    <br><br>
+        st.write("Trainer, Co-Lead-AICW")
 
-                    <b>Designation</b>
-
-                    <br><br>
-
-                    Trainer, Co-Lead-AICW
-
-                </div>
-
-            </div>
-            """,
-            unsafe_allow_html=True
-        )
+   
