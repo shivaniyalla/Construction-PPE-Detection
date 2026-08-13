@@ -1145,21 +1145,19 @@ else:
 
 
                     st.markdown(
-                        f"""
-                        <div class="violation-box">
+    f"""
+    <div class="violation-box">
+        <div style="font-size:18px; font-weight:800; margin-bottom:12px;">
+            🚨 PPE VIOLATION DETECTED
+        </div>
 
-                            🚨 PPE VIOLATION DETECTED
-
-                            <br><br>
-
-                            Violations:
-                            {violation_text}
-
-                        </div>
-                        """,
-                        unsafe_allow_html=True
-                    )
-
+        <div style="font-size:15px; margin-top:8px;">
+            Violations: <strong>{violation_text}</strong>
+        </div>
+    </div>
+    """,
+    unsafe_allow_html=True
+)
 
                 else:
 
