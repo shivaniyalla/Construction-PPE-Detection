@@ -1566,10 +1566,10 @@ def display_safe_box():
 if st.session_state.page == "home":
 
     # ========================================================
-    # HERO
+    # HERO SECTION
     # ========================================================
 
-    render_html(
+    st.markdown(
         """
         <div class="home-hero">
 
@@ -1586,7 +1586,8 @@ if st.session_state.page == "home":
             </div>
 
         </div>
-        """
+        """,
+        unsafe_allow_html=True
     )
 
 
@@ -1606,7 +1607,7 @@ if st.session_state.page == "home":
 
     with left_col:
 
-        render_html(
+        st.markdown(
             """
             <div class="home-card aicw-card">
 
@@ -1627,7 +1628,8 @@ if st.session_state.page == "home":
                 </div>
 
             </div>
-            """
+            """,
+            unsafe_allow_html=True
         )
 
         st.write("")
@@ -1637,9 +1639,7 @@ if st.session_state.page == "home":
             key="home_predict_button"
         ):
 
-            st.session_state.page = (
-                "predict"
-            )
+            st.session_state.page = "predict"
 
             st.rerun()
 
@@ -1650,7 +1650,7 @@ if st.session_state.page == "home":
 
     with right_col:
 
-        render_html(
+        st.markdown(
             """
             <div class="home-card">
 
@@ -1680,7 +1680,8 @@ if st.session_state.page == "home":
                 </div>
 
             </div>
-            """
+            """,
+            unsafe_allow_html=True
         )
 
 
@@ -1692,17 +1693,18 @@ if st.session_state.page == "home":
     # TEAM HEADING
     # ========================================================
 
-    render_html(
+    st.markdown(
         """
         <div class="team-heading">
             👩🏻‍💻 Our Team
         </div>
-        """
+        """,
+        unsafe_allow_html=True
     )
 
 
     # ========================================================
-    # TEAM CARDS
+    # TEAM MEMBERS
     # ========================================================
 
     c1, c2, c3, c4 = st.columns(
@@ -1710,61 +1712,120 @@ if st.session_state.page == "home":
         gap="medium"
     )
 
-    members = [
 
-        (
-            "👩🏻‍💻",
-            "Y.D.V.Sivani",
-            "AI / ML"
-        ),
+    # ========================================================
+    # MEMBER 1
+    # ========================================================
 
-        (
-            "👩🏻‍💻",
-            "V.L.S.Asritha",
-            "AI / ML"
-        ),
+    with c1:
 
-        (
-            "👩🏻‍💻",
-            "R.Likhitha",
-            "Development"
-        ),
+        st.markdown(
+            """
+            <div class="team-card">
 
-        (
-            "👩🏻‍💻",
-            "S.Poojitha Sri",
-            "Development"
-        )
-    ]
-
-    for col, member in zip(
-        [c1, c2, c3, c4],
-        members
-    ):
-
-        with col:
-
-            render_html(
-                f"""
-                <div class="team-card">
-
-                    <div class="avatar">
-                        {member[0]}
-                    </div>
-
-                    <div class="member-name">
-                        {member[1]}
-                    </div>
-
-                    <div class="member-role">
-                        {member[2]}
-                    </div>
-
+                <div class="avatar">
+                    👩🏻‍💻
                 </div>
-                """
-            )
+
+                <div class="member-name">
+                    Y.D.V.Sivani
+                </div>
+
+                <div class="member-role">
+                    AI / ML
+                </div>
+
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
 
 
+    # ========================================================
+    # MEMBER 2
+    # ========================================================
+
+    with c2:
+
+        st.markdown(
+            """
+            <div class="team-card">
+
+                <div class="avatar">
+                    👩🏻‍💻
+                </div>
+
+                <div class="member-name">
+                    V.L.S.Asritha
+                </div>
+
+                <div class="member-role">
+                    AI / ML
+                </div>
+
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
+
+
+    # ========================================================
+    # MEMBER 3
+    # ========================================================
+
+    with c3:
+
+        st.markdown(
+            """
+            <div class="team-card">
+
+                <div class="avatar">
+                    👩🏻‍💻
+                </div>
+
+                <div class="member-name">
+                    R.Likhitha
+                </div>
+
+                <div class="member-role">
+                    Development
+                </div>
+
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
+
+
+    # ========================================================
+    # MEMBER 4
+    # ========================================================
+
+    with c4:
+
+        st.markdown(
+            """
+            <div class="team-card">
+
+                <div class="avatar">
+                    👩🏻‍💻
+                </div>
+
+                <div class="member-name">
+                    S.Poojitha Sri
+                </div>
+
+                <div class="member-role">
+                    Development
+                </div>
+
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
+
+
+    st.write("")
     st.write("")
 
 
@@ -1772,7 +1833,7 @@ if st.session_state.page == "home":
     # GUIDE CARD
     # ========================================================
 
-    render_html(
+    st.markdown(
         """
         <div class="guide-card">
 
@@ -1804,7 +1865,8 @@ if st.session_state.page == "home":
             </div>
 
         </div>
-        """
+        """,
+        unsafe_allow_html=True
     )
 
 
@@ -1812,13 +1874,21 @@ if st.session_state.page == "home":
     # FOOTER
     # ========================================================
 
-    render_html(
+    st.markdown(
         """
         <div class="footer">
             🦺 GuardX-AI • Building Safer Construction Sites with AI
         </div>
-        """
+        """,
+        unsafe_allow_html=True
     )
+
+
+# ============================================================
+# PREDICTION PAGE
+# ============================================================
+
+else:
 
 
 # ============================================================
