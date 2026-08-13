@@ -41,6 +41,18 @@ if "firebase_ready" not in st.session_state:
 
 
 # ============================================================
+# DETECTION SETTINGS
+# ============================================================
+
+# General detection confidence
+GENERAL_CONFIDENCE = 0.30
+
+# Higher threshold specifically for NO-Safety Vest
+# This reduces false NO-Safety Vest detections.
+NO_VEST_CONFIDENCE = 0.75
+
+
+# ============================================================
 # FIREBASE ADMIN INITIALIZATION
 # ============================================================
 
@@ -82,10 +94,6 @@ st.markdown(
     """
     <style>
 
-    /* ======================================================
-       APP
-       ====================================================== */
-
     .stApp {
         background: #f4f6fa;
     }
@@ -110,10 +118,7 @@ st.markdown(
         visibility: hidden;
     }
 
-
-    /* ======================================================
-       HOME PAGE
-       ====================================================== */
+    /* HOME */
 
     .main-title {
         color: #17345f !important;
@@ -144,10 +149,7 @@ st.markdown(
         margin-bottom: 12px;
     }
 
-
-    /* ======================================================
-       GENERAL TEXT
-       ====================================================== */
+    /* GENERAL */
 
     .stMarkdown,
     .stMarkdown p,
@@ -155,10 +157,7 @@ st.markdown(
         color: #374151;
     }
 
-
-    /* ======================================================
-       CARDS
-       ====================================================== */
+    /* CARDS */
 
     div[data-testid="stVerticalBlockBorderWrapper"] {
         background: #ffffff !important;
@@ -181,10 +180,7 @@ st.markdown(
         line-height: 2.2 !important;
     }
 
-
-    /* ======================================================
-       BUTTONS
-       ====================================================== */
+    /* BUTTONS */
 
     div.stButton > button {
         width: 100%;
@@ -203,10 +199,7 @@ st.markdown(
         background: #f8fafc !important;
     }
 
-
-    /* ======================================================
-       RADIO / INPUT
-       ====================================================== */
+    /* RADIO / INPUT */
 
     div[data-testid="stRadio"] label {
         color: #334155 !important;
@@ -222,10 +215,7 @@ st.markdown(
         color: #334155 !important;
     }
 
-
-    /* ======================================================
-       FOOTER
-       ====================================================== */
+    /* FOOTER */
 
     .footer-text {
         color: #6b7280 !important;
@@ -234,10 +224,7 @@ st.markdown(
         margin-top: 32px;
     }
 
-
-    /* ======================================================
-       DETECTION PAGE
-       ====================================================== */
+    /* DETECTION */
 
     .detect-title {
         color: #17345f !important;
@@ -254,10 +241,7 @@ st.markdown(
         margin-bottom: 25px;
     }
 
-
-    /* ======================================================
-       SAFE BOX
-       ====================================================== */
+    /* SAFE */
 
     .safe-box {
         background: #ecfdf5;
@@ -269,10 +253,7 @@ st.markdown(
         margin-top: 15px;
     }
 
-
-    /* ======================================================
-       VIOLATION BOX
-       ====================================================== */
+    /* VIOLATION */
 
     .violation-box {
         background: #fef2f2;
@@ -296,10 +277,7 @@ st.markdown(
         color: #991b1b !important;
     }
 
-
-    /* ======================================================
-       MODEL BOX
-       ====================================================== */
+    /* MODEL */
 
     .model-box {
         background: #f8fafc;
@@ -309,11 +287,6 @@ st.markdown(
         margin-top: 10px;
         color: #334155 !important;
     }
-
-
-    /* ======================================================
-       RESPONSIVE
-       ====================================================== */
 
     @media(max-width: 900px) {
 
@@ -524,28 +497,48 @@ def extract_detections(result):
 
     detections = []
 
-    if result.boxes is not None:
+    if result.boxes is None:
+        return detections
 
-        for box in result.boxes:
+    for box in result.boxes:
 
-            class_id = int(
-                box.cls[0]
+        class_id = int(
+            box.cls[0]
+        )
+
+        confidence = float(
+            box.conf[0]
+        )
+
+        name = str(
+            result.names[class_id]
+        )
+
+        detections.append(
+            (
+                name,
+                confidence
             )
-
-            confidence = float(
-                box.conf[0]
-            )
-
-            name = result.names[class_id]
-
-            detections.append(
-                (
-                    name,
-                    confidence
-                )
-            )
+        )
 
     return detections
+
+
+# ============================================================
+# NORMALIZE CLASS NAME
+# ============================================================
+
+def normalize_class_name(name):
+
+    normalized = str(name).lower().strip()
+
+    normalized = normalized.replace("_", "-")
+
+    normalized = " ".join(
+        normalized.split()
+    )
+
+    return normalized
 
 
 # ============================================================
@@ -555,45 +548,56 @@ def extract_detections(result):
 def get_violations(detections):
 
     """
-    Current trained model classes:
+    Actual dataset/model mapping:
 
     0 -> Hardhat
     1 -> NO-Hardhat
     2 -> Mask
     3 -> NO-Mask
-    4 -> NO-Safety Vest
+    4 -> Safety Vest
+    5 -> NO-Safety Vest
+
+    Safety Vest is NOT a violation.
+
+    NO-Safety Vest is considered a violation only
+    when confidence >= NO_VEST_CONFIDENCE.
     """
-
-    violation_names = {
-        "no-hardhat",
-        "no_hardhat",
-        "no hardhat",
-
-        "no-mask",
-        "no_mask",
-        "no mask",
-
-        "no-safety vest",
-        "no-safety-vest",
-        "no_safety_vest",
-        "no safety vest"
-    }
 
     violations = []
 
+    positive_vest_detected = False
+
+    # --------------------------------------------------------
+    # First check if Safety Vest is detected
+    # --------------------------------------------------------
+
     for name, confidence in detections:
 
-        normalized_name = (
-            name.lower()
-            .strip()
-        )
+        normalized_name = normalize_class_name(name)
 
-        normalized_name = (
-            normalized_name
-            .replace("_", "-")
-        )
+        if normalized_name in {
+            "safety vest",
+            "safety-vest"
+        }:
 
-        if normalized_name in violation_names:
+            positive_vest_detected = True
+
+    # --------------------------------------------------------
+    # Check violations
+    # --------------------------------------------------------
+
+    for name, confidence in detections:
+
+        normalized_name = normalize_class_name(name)
+
+        # --------------------------------------------
+        # NO-Hardhat
+        # --------------------------------------------
+
+        if normalized_name in {
+            "no-hardhat",
+            "no hardhat"
+        }:
 
             violations.append(
                 (
@@ -602,6 +606,46 @@ def get_violations(detections):
                 )
             )
 
+        # --------------------------------------------
+        # NO-Mask
+        # --------------------------------------------
+
+        elif normalized_name in {
+            "no-mask",
+            "no mask"
+        }:
+
+            violations.append(
+                (
+                    name,
+                    confidence
+                )
+            )
+
+        # --------------------------------------------
+        # NO-Safety Vest
+        # --------------------------------------------
+
+        elif normalized_name in {
+            "no-safety-vest",
+            "no safety vest"
+        }:
+
+            # If positive Safety Vest is detected,
+            # suppress NO-Safety Vest.
+            if positive_vest_detected:
+                continue
+
+            # Only accept high-confidence NO-Safety Vest.
+            if confidence >= NO_VEST_CONFIDENCE:
+
+                violations.append(
+                    (
+                        name,
+                        confidence
+                    )
+                )
+
     return violations
 
 
@@ -609,21 +653,20 @@ def get_violations(detections):
 # DISPLAY VIOLATION BOX
 # ============================================================
 
-def display_violation_box(
-    violations
-):
+def display_violation_box(violations):
 
     if not violations:
         return
 
+    violation_names = []
+
+    for name, confidence in violations:
+
+        if name not in violation_names:
+            violation_names.append(name)
+
     violation_text = ", ".join(
-        sorted(
-            set(
-                name
-                for name, confidence
-                in violations
-            )
-        )
+        violation_names
     )
 
     st.markdown(
@@ -654,7 +697,7 @@ def display_safe_box():
     st.markdown(
         """
         <div class="safe-box">
-            🟢 No configured PPE violation detected.
+            🟢 SAFE — No PPE violation detected.
         </div>
         """,
         unsafe_allow_html=True
@@ -732,7 +775,6 @@ if st.session_state.page == "home":
         gap="large"
     )
 
-
     # ========================================================
     # LEFT
     # ========================================================
@@ -770,7 +812,6 @@ if st.session_state.page == "home":
             st.session_state.page = "predict"
 
             st.rerun()
-
 
     # ========================================================
     # RIGHT
@@ -816,10 +857,8 @@ if st.session_state.page == "home":
                 "working conditions."
             )
 
-
     st.write("")
     st.write("")
-
 
     # ========================================================
     # BOTTOM CARDS
@@ -829,7 +868,6 @@ if st.session_state.page == "home":
         [1.25, 1.25, 0.75],
         gap="large"
     )
-
 
     # ========================================================
     # TEAM
@@ -855,7 +893,6 @@ if st.session_state.page == "home":
                 unsafe_allow_html=True
             )
 
-
     # ========================================================
     # GMAIL
     # ========================================================
@@ -879,7 +916,6 @@ if st.session_state.page == "home":
                 """,
                 unsafe_allow_html=True
             )
-
 
     # ========================================================
     # GUIDE
@@ -912,7 +948,6 @@ if st.session_state.page == "home":
                 unsafe_allow_html=True
             )
 
-
     # ========================================================
     # FOOTER
     # ========================================================
@@ -933,10 +968,6 @@ if st.session_state.page == "home":
 
 else:
 
-    # ========================================================
-    # TITLE
-    # ========================================================
-
     st.markdown(
         """
         <div class="detect-title">
@@ -954,7 +985,6 @@ else:
         """,
         unsafe_allow_html=True
     )
-
 
     # ========================================================
     # LOAD MODEL
@@ -980,7 +1010,6 @@ else:
 
         st.stop()
 
-
     # ========================================================
     # MODEL INFORMATION
     # ========================================================
@@ -997,7 +1026,7 @@ else:
         )
 
         st.write(
-            "Current model detects 5 PPE-related classes:"
+            "Configured PPE classes:"
         )
 
         st.markdown(
@@ -1006,13 +1035,17 @@ else:
             🚨 **NO-Hardhat**  
             😷 **Mask**  
             🚨 **NO-Mask**  
+            🦺 **Safety Vest**  
             🚨 **NO-Safety Vest**
             """
         )
 
+        st.caption(
+            f"General confidence: {GENERAL_CONFIDENCE:.2f} | "
+            f"NO-Safety Vest confidence: {NO_VEST_CONFIDENCE:.2f}"
+        )
 
     st.write("")
-
 
     # ========================================================
     # PUSH NOTIFICATION CARD
@@ -1111,9 +1144,7 @@ else:
                 "🔔 Push notifications are enabled."
             )
 
-
     st.write("")
-
 
     # ========================================================
     # BACK BUTTON
@@ -1129,9 +1160,7 @@ else:
 
         st.rerun()
 
-
     st.write("")
-
 
     # ========================================================
     # INPUT TYPE
@@ -1148,7 +1177,6 @@ else:
         key="input_type_selector"
     )
 
-
     # ========================================================
     # IMAGE
     # ========================================================
@@ -1159,7 +1187,6 @@ else:
             2,
             gap="large"
         )
-
 
         # ----------------------------------------------------
         # INPUT
@@ -1205,7 +1232,7 @@ else:
 
                         result = model.predict(
                             np.array(image),
-                            conf=0.30,
+                            conf=GENERAL_CONFIDENCE,
                             verbose=False
                         )[0]
 
@@ -1243,7 +1270,6 @@ else:
                             "image"
                         )
 
-
         # ----------------------------------------------------
         # RESULT
         # ----------------------------------------------------
@@ -1279,10 +1305,6 @@ else:
                     )
                 )
 
-                # --------------------------------------------
-                # VIOLATION / SAFE
-                # --------------------------------------------
-
                 if violations:
 
                     display_violation_box(
@@ -1292,7 +1314,6 @@ else:
                 else:
 
                     display_safe_box()
-
 
                 # --------------------------------------------
                 # DETECTED OBJECTS
@@ -1306,6 +1327,16 @@ else:
 
                     for name, confidence in detections:
 
+                        # Don't show low-confidence
+                        # NO-Safety Vest as a violation.
+                        if (
+                            "safety" in name.lower()
+                            and "vest" in name.lower()
+                            and "no" in name.lower()
+                            and confidence < NO_VEST_CONFIDENCE
+                        ):
+                            continue
+
                         st.write(
                             f"**{name}** — "
                             f"{confidence * 100:.1f}%"
@@ -1316,7 +1347,6 @@ else:
                     st.info(
                         "No objects detected."
                     )
-
 
     # ========================================================
     # CAMERA
@@ -1347,7 +1377,7 @@ else:
 
                     result = model.predict(
                         np.array(image),
-                        conf=0.30,
+                        conf=GENERAL_CONFIDENCE,
                         verbose=False
                     )[0]
 
@@ -1372,10 +1402,6 @@ else:
                     detections
                 )
 
-                # --------------------------------------------
-                # VIOLATION / SAFE
-                # --------------------------------------------
-
                 if violations:
 
                     display_violation_box(
@@ -1391,11 +1417,6 @@ else:
 
                     display_safe_box()
 
-
-                # --------------------------------------------
-                # DETECTED OBJECTS
-                # --------------------------------------------
-
                 if detections:
 
                     st.write(
@@ -1403,6 +1424,14 @@ else:
                     )
 
                     for name, confidence in detections:
+
+                        if (
+                            "safety" in name.lower()
+                            and "vest" in name.lower()
+                            and "no" in name.lower()
+                            and confidence < NO_VEST_CONFIDENCE
+                        ):
+                            continue
 
                         st.write(
                             f"**{name}** — "
@@ -1414,7 +1443,6 @@ else:
                     st.info(
                         "No objects detected."
                     )
-
 
     # ========================================================
     # VIDEO
@@ -1464,7 +1492,6 @@ else:
 
                     input_file.close()
 
-
                     # ----------------------------------------
                     # OPEN VIDEO
                     # ----------------------------------------
@@ -1492,7 +1519,6 @@ else:
                         )
                     )
 
-
                     # ----------------------------------------
                     # OUTPUT VIDEO
                     # ----------------------------------------
@@ -1506,7 +1532,6 @@ else:
 
                     output_file.close()
 
-
                     fourcc = cv2.VideoWriter_fourcc(
                         *"mp4v"
                     )
@@ -1518,13 +1543,11 @@ else:
                         (width, height)
                     )
 
-
                     # ----------------------------------------
                     # TRACK VIOLATIONS
                     # ----------------------------------------
 
                     video_violations = set()
-
 
                     # ----------------------------------------
                     # PROCESS FRAMES
@@ -1537,13 +1560,11 @@ else:
                         if not ret:
                             break
 
-
                         result = model.predict(
                             frame,
-                            conf=0.30,
+                            conf=GENERAL_CONFIDENCE,
                             verbose=False
                         )[0]
-
 
                         annotated = result.plot()
 
@@ -1551,22 +1572,17 @@ else:
                             annotated
                         )
 
-
-                        # Get detections
                         frame_detections = (
                             extract_detections(
                                 result
                             )
                         )
 
-
-                        # Get violations
                         frame_violations = (
                             get_violations(
                                 frame_detections
                             )
                         )
-
 
                         for name, confidence in frame_violations:
 
@@ -1574,16 +1590,24 @@ else:
                                 name
                             )
 
-
                     cap.release()
 
                     writer.release()
 
+                    # ----------------------------------------
+                    # DELETE INPUT
+                    # ----------------------------------------
+
+                    try:
+                        os.remove(
+                            input_file.name
+                        )
+                    except:
+                        pass
 
                 st.success(
                     "✅ Video processing completed."
                 )
-
 
                 # --------------------------------------------
                 # SHOW VIDEO
@@ -1592,7 +1616,6 @@ else:
                 st.video(
                     output_path
                 )
-
 
                 # --------------------------------------------
                 # VIDEO RESULT
