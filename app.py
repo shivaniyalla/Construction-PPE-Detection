@@ -47,7 +47,8 @@ defaults = {
     "detections": [],
     "image_violations": [],
     "video_output": None,
-    "last_alert_key": None
+    "last_alert_key": None,
+    "firebase_error": None
 }
 
 for key, value in defaults.items():
@@ -61,19 +62,18 @@ for key, value in defaults.items():
 
 GENERAL_CONFIDENCE = 0.30
 
-# NO-Safety Vest false detections ni reduce cheyyadaniki
+# Higher threshold to reduce false NO-Safety Vest detections
 NO_VEST_CONFIDENCE = 0.75
 
 
 # ============================================================
 # HTML HELPER
+# IMPORTANT:
+# Use st.html instead of st.markdown for custom HTML
 # ============================================================
 
 def render_html(content):
-    st.markdown(
-        dedent(content),
-        unsafe_allow_html=True
-    )
+    st.html(dedent(content))
 
 
 # ============================================================
@@ -95,7 +95,6 @@ def initialize_firebase():
         )
 
         if "private_key" in firebase_config:
-
             firebase_config["private_key"] = (
                 firebase_config["private_key"]
                 .replace("\\n", "\n")
@@ -140,585 +139,666 @@ firebase_web_config = {
 # ============================================================
 
 VAPID_KEY = (
-    "BGE1N7sXhztv_V_XZ8yxQR9dn74UMgg17UKGmigh"
+    "BGE1N7sXhztv_V_XZ8yxQR9dn74UMgg17UKmGigh"
     "YXZGmW1sGfOCHSAqyIvJZ77GeS2-tnlgBbLVTmAVgJrdQ7M"
 )
 
 
 # ============================================================
 # GLOBAL CSS
+# IMPORTANT:
+# st.html is used instead of st.markdown
 # ============================================================
 
-st.markdown(
+st.html(
     """
-<style>
-
-.stApp {
-    background:
-        radial-gradient(
-            circle at 10% 10%,
-            rgba(124,58,237,0.18),
-            transparent 30%
-        ),
-        radial-gradient(
-            circle at 90% 15%,
-            rgba(6,182,212,0.13),
-            transparent 28%
-        ),
-        radial-gradient(
-            circle at 50% 100%,
-            rgba(236,72,153,0.08),
-            transparent 35%
-        ),
-        #090b16;
-
-    color: #f8fafc;
-}
-
-.block-container {
-    max-width: 1400px;
-    padding-top: 30px;
-    padding-bottom: 50px;
-    padding-left: 5%;
-    padding-right: 5%;
-}
-
-#MainMenu {
-    visibility: hidden;
-}
-
-header {
-    visibility: hidden;
-}
-
-footer {
-    visibility: hidden;
-}
-
-
-/* =========================================================
-   HOME
-========================================================= */
-
-.home-hero {
-    text-align: center;
-    padding: 18px 20px 30px 20px;
-}
-
-.hero-badge {
-    display: inline-block;
-    padding: 7px 15px;
-    border-radius: 30px;
-    background: rgba(139,92,246,0.14);
-    border: 1px solid rgba(167,139,250,0.35);
-    color: #c4b5fd;
-    font-size: 13px;
-    font-weight: 700;
-    margin-bottom: 15px;
-}
-
-.hero-title {
-    font-size: 56px;
-    line-height: 1.1;
-    font-weight: 900;
-    letter-spacing: -2px;
-    background:
-        linear-gradient(
-            90deg,
-            #ffffff,
-            #c4b5fd,
-            #67e8f9,
-            #f9a8d4
-        );
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-}
-
-.hero-subtitle {
-    color: #cbd5e1;
-    font-size: 19px;
-    font-weight: 600;
-    margin-top: 10px;
-}
-
-
-/* =========================================================
-   CARDS
-========================================================= */
-
-.home-card {
-    background:
-        linear-gradient(
-            145deg,
-            rgba(30,41,59,0.88),
-            rgba(15,23,42,0.78)
-        );
-
-    border:
-        1px solid rgba(148,163,184,0.17);
-
-    border-radius: 24px;
-
-    padding: 28px;
-
-    box-shadow:
-        0 18px 50px rgba(0,0,0,0.28),
-        inset 0 1px 0 rgba(255,255,255,0.04);
-
-    min-height: 250px;
-}
-
-.home-card:hover {
-    border-color:
-        rgba(139,92,246,0.40);
-}
-
-
-/* =========================================================
-   AICW
-========================================================= */
-
-.aicw-card {
-    min-height: 330px;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-}
-
-.aicw-icon {
-    font-size: 58px;
-    margin-bottom: 15px;
-}
-
-.aicw-title {
-    font-size: 30px;
-    font-weight: 900;
-    color: #ffffff;
-}
-
-.aicw-subtitle {
-    color: #a78bfa;
-    font-size: 18px;
-    font-weight: 700;
-    margin-top: 8px;
-}
-
-.capstone {
-    margin-top: 22px;
-    padding: 9px 15px;
-    border-radius: 30px;
-    background: rgba(34,211,238,0.10);
-    border: 1px solid rgba(34,211,238,0.25);
-    color: #67e8f9;
-    font-weight: 700;
-    display: inline-block;
-}
-
-
-/* =========================================================
-   ABOUT
-========================================================= */
-
-.about-title {
-    color: #ffffff;
-    font-size: 20px;
-    font-weight: 850;
-    margin-bottom: 14px;
-}
-
-.about-text {
-    color: #aab5c7;
-    font-size: 14px;
-    line-height: 1.8;
-}
-
-
-/* =========================================================
-   TEAM
-========================================================= */
-
-.team-heading {
-    color: #f8fafc;
-    font-size: 22px;
-    font-weight: 900;
-    margin: 12px 0 16px 0;
-}
-
-.team-card {
-    background:
-        linear-gradient(
-            145deg,
-            rgba(30,41,59,0.82),
-            rgba(15,23,42,0.72)
-        );
-
-    border:
-        1px solid rgba(148,163,184,0.15);
-
-    border-radius: 20px;
-
-    padding: 20px;
-
-    min-height: 165px;
-
-    box-shadow:
-        0 12px 35px rgba(0,0,0,0.20);
-}
-
-.avatar {
-    width: 56px;
-    height: 56px;
-    border-radius: 50%;
-
-    display: flex;
-    align-items: center;
-    justify-content: center;
-
-    font-size: 28px;
-
-    background:
-        linear-gradient(
-            135deg,
-            #7c3aed,
-            #06b6d4
-        );
-
-    box-shadow:
-        0 8px 25px rgba(124,58,237,0.30);
-
-    margin-bottom: 12px;
-}
-
-.member-name {
-    color: #f8fafc;
-    font-weight: 800;
-    font-size: 15px;
-}
-
-.member-role {
-    color: #94a3b8;
-    font-size: 12px;
-    margin-top: 4px;
-}
-
-
-/* =========================================================
-   GUIDE
-========================================================= */
-
-.guide-card {
-    background:
-        linear-gradient(
-            145deg,
-            rgba(30,41,59,0.88),
-            rgba(15,23,42,0.78)
-        );
-
-    border:
-        1px solid rgba(167,139,250,0.20);
-
-    border-radius: 22px;
-
-    padding: 20px 24px;
-
-    box-shadow:
-        0 12px 35px rgba(0,0,0,0.22);
-}
-
-
-/* =========================================================
-   BUTTONS
-========================================================= */
-
-div.stButton > button {
-
-    width: 100%;
-
-    min-height: 48px;
-
-    border-radius: 13px !important;
-
-    background:
-        linear-gradient(
-            135deg,
-            #7c3aed,
-            #2563eb
-        ) !important;
-
-    color: white !important;
-
-    border:
-        1px solid rgba(167,139,250,0.4) !important;
-
-    font-size: 14px !important;
-
-    font-weight: 800 !important;
-
-    box-shadow:
-        0 8px 25px rgba(124,58,237,0.25);
-
-    transition: 0.25s ease;
-}
-
-div.stButton > button:hover {
-
-    transform: translateY(-2px);
-
-    box-shadow:
-        0 12px 35px rgba(124,58,237,0.40);
-
-    border-color:
-        #a78bfa !important;
-}
-
-
-/* =========================================================
-   RADIO
-========================================================= */
-
-div[data-testid="stRadio"] {
-
-    background:
-        rgba(15,23,42,0.65);
-
-    border:
-        1px solid rgba(148,163,184,0.14);
-
-    padding: 12px 18px;
-
-    border-radius: 16px;
-}
-
-div[data-testid="stRadio"] label {
-
-    color: #cbd5e1 !important;
-
-    font-weight: 700 !important;
-}
-
-
-/* =========================================================
-   FILE UPLOADER
-========================================================= */
-
-div[data-testid="stFileUploader"] {
-
-    background:
-        rgba(15,23,42,0.65);
-
-    border:
-        1px dashed rgba(139,92,246,0.45);
-
-    border-radius: 16px;
-
-    padding: 10px;
-}
-
-
-/* =========================================================
-   CONTAINERS
-========================================================= */
-
-div[data-testid="stVerticalBlockBorderWrapper"] {
-
-    background:
-        linear-gradient(
-            145deg,
-            rgba(30,41,59,0.80),
-            rgba(15,23,42,0.72)
-        ) !important;
-
-    border:
-        1px solid rgba(148,163,184,0.14) !important;
-
-    border-radius: 20px !important;
-
-    box-shadow:
-        0 15px 40px rgba(0,0,0,0.22);
-
-    padding: 10px !important;
-}
-
-
-/* =========================================================
-   TEXT
-========================================================= */
-
-.stMarkdown,
-.stMarkdown p,
-.stMarkdown li {
-    color: #cbd5e1;
-}
-
-label {
-    color: #cbd5e1 !important;
-}
-
-
-/* =========================================================
-   CARD TITLE
-========================================================= */
-
-.card-title {
-
-    color: #ffffff;
-
-    font-size: 20px;
-
-    font-weight: 900;
-
-    margin-bottom: 12px;
-}
-
-
-/* =========================================================
-   DETECTION
-========================================================= */
-
-.detect-title {
-
-    text-align: center;
-
-    font-size: 44px;
-
-    font-weight: 900;
-
-    background:
-        linear-gradient(
-            90deg,
-            #c4b5fd,
-            #67e8f9,
-            #f9a8d4
-        );
-
-    -webkit-background-clip: text;
-
-    -webkit-text-fill-color: transparent;
-}
-
-.detect-subtitle {
-
-    text-align: center;
-
-    color: #94a3b8;
-
-    font-size: 15px;
-
-    margin-bottom: 28px;
-}
-
-
-/* =========================================================
-   SAFE
-========================================================= */
-
-.safe-box {
-
-    margin-top: 16px;
-
-    padding: 18px;
-
-    border-radius: 16px;
-
-    background:
-        rgba(16,185,129,0.10);
-
-    border:
-        1px solid rgba(52,211,153,0.35);
-
-    color: #6ee7b7 !important;
-
-    font-weight: 800;
-}
-
-
-/* =========================================================
-   VIOLATION
-========================================================= */
-
-.violation-box {
-
-    margin-top: 16px;
-
-    padding: 20px;
-
-    border-radius: 17px;
-
-    background:
-        linear-gradient(
-            135deg,
-            rgba(239,68,68,0.14),
-            rgba(127,29,29,0.12)
-        );
-
-    border:
-        1px solid rgba(248,113,113,0.42);
-
-    box-shadow:
-        0 10px 30px rgba(239,68,68,0.12);
-}
-
-.violation-title {
-
-    color: #fca5a5 !important;
-
-    font-size: 18px;
-
-    font-weight: 900;
-}
-
-.violation-text {
-
-    color: #fecaca !important;
-
-    font-size: 14px;
-
-    font-weight: 700;
-
-    margin-top: 8px;
-}
-
-
-/* =========================================================
-   FOOTER
-========================================================= */
-
-.footer {
-
-    text-align: center;
-
-    color: #64748b;
-
-    font-size: 13px;
-
-    padding: 35px 0 10px 0;
-}
-
-
-/* =========================================================
-   MOBILE
-========================================================= */
-
-@media(max-width: 900px) {
-
-    .hero-title {
-        font-size: 38px;
+    <style>
+
+    /* ======================================================
+       MAIN APP
+    ====================================================== */
+
+    .stApp {
+        background:
+            radial-gradient(
+                circle at 10% 10%,
+                rgba(124,58,237,0.18),
+                transparent 30%
+            ),
+            radial-gradient(
+                circle at 90% 15%,
+                rgba(6,182,212,0.13),
+                transparent 28%
+            ),
+            radial-gradient(
+                circle at 50% 100%,
+                rgba(236,72,153,0.08),
+                transparent 35%
+            ),
+            #090b16;
+
+        color: #f8fafc;
     }
 
-    .detect-title {
-        font-size: 30px;
-    }
 
     .block-container {
-        padding-left: 4%;
-        padding-right: 4%;
+        max-width: 1400px;
+        padding-top: 30px;
+        padding-bottom: 50px;
+        padding-left: 5%;
+        padding-right: 5%;
     }
 
-}
 
-</style>
-""",
-    unsafe_allow_html=True
+    #MainMenu {
+        visibility: hidden;
+    }
+
+
+    header {
+        visibility: hidden;
+    }
+
+
+    footer {
+        visibility: hidden;
+    }
+
+
+    /* ======================================================
+       HOME HERO
+    ====================================================== */
+
+    .home-hero {
+        text-align: center;
+        padding: 18px 20px 30px 20px;
+    }
+
+
+    .hero-badge {
+        display: inline-block;
+
+        padding: 7px 15px;
+
+        border-radius: 30px;
+
+        background: rgba(139,92,246,0.14);
+
+        border: 1px solid rgba(167,139,250,0.35);
+
+        color: #c4b5fd;
+
+        font-size: 13px;
+
+        font-weight: 700;
+
+        margin-bottom: 15px;
+    }
+
+
+    .hero-title {
+        font-size: 56px;
+
+        line-height: 1.1;
+
+        font-weight: 900;
+
+        letter-spacing: -2px;
+
+        background:
+            linear-gradient(
+                90deg,
+                #ffffff,
+                #c4b5fd,
+                #67e8f9,
+                #f9a8d4
+            );
+
+        -webkit-background-clip: text;
+
+        -webkit-text-fill-color: transparent;
+    }
+
+
+    .hero-subtitle {
+        color: #cbd5e1;
+
+        font-size: 19px;
+
+        font-weight: 600;
+
+        margin-top: 10px;
+    }
+
+
+    /* ======================================================
+       HOME CARDS
+    ====================================================== */
+
+    .home-card {
+        background:
+            linear-gradient(
+                145deg,
+                rgba(30,41,59,0.88),
+                rgba(15,23,42,0.78)
+            );
+
+        border:
+            1px solid rgba(148,163,184,0.17);
+
+        border-radius: 24px;
+
+        padding: 28px;
+
+        box-shadow:
+            0 18px 50px rgba(0,0,0,0.28),
+            inset 0 1px 0 rgba(255,255,255,0.04);
+
+        min-height: 250px;
+    }
+
+
+    .home-card:hover {
+        border-color:
+            rgba(139,92,246,0.40);
+    }
+
+
+    /* ======================================================
+       AICW CARD
+    ====================================================== */
+
+    .aicw-card {
+        min-height: 330px;
+
+        display: flex;
+
+        flex-direction: column;
+
+        justify-content: center;
+    }
+
+
+    .aicw-icon {
+        font-size: 58px;
+
+        margin-bottom: 15px;
+    }
+
+
+    .aicw-title {
+        font-size: 30px;
+
+        font-weight: 900;
+
+        color: #ffffff;
+    }
+
+
+    .aicw-subtitle {
+        color: #a78bfa;
+
+        font-size: 18px;
+
+        font-weight: 700;
+
+        margin-top: 8px;
+    }
+
+
+    .capstone {
+        margin-top: 22px;
+
+        padding: 9px 15px;
+
+        border-radius: 30px;
+
+        background:
+            rgba(34,211,238,0.10);
+
+        border:
+            1px solid rgba(34,211,238,0.25);
+
+        color: #67e8f9;
+
+        font-weight: 700;
+
+        display: inline-block;
+    }
+
+
+    /* ======================================================
+       ABOUT
+    ====================================================== */
+
+    .about-title {
+        color: #ffffff;
+
+        font-size: 20px;
+
+        font-weight: 850;
+
+        margin-bottom: 14px;
+    }
+
+
+    .about-text {
+        color: #aab5c7;
+
+        font-size: 14px;
+
+        line-height: 1.8;
+    }
+
+
+    /* ======================================================
+       TEAM
+    ====================================================== */
+
+    .team-heading {
+        color: #f8fafc;
+
+        font-size: 22px;
+
+        font-weight: 900;
+
+        margin: 12px 0 16px 0;
+    }
+
+
+    .team-card {
+        background:
+            linear-gradient(
+                145deg,
+                rgba(30,41,59,0.82),
+                rgba(15,23,42,0.72)
+            );
+
+        border:
+            1px solid rgba(148,163,184,0.15);
+
+        border-radius: 20px;
+
+        padding: 20px;
+
+        min-height: 165px;
+
+        box-shadow:
+            0 12px 35px rgba(0,0,0,0.20);
+    }
+
+
+    .avatar {
+        width: 56px;
+
+        height: 56px;
+
+        border-radius: 50%;
+
+        display: flex;
+
+        align-items: center;
+
+        justify-content: center;
+
+        font-size: 28px;
+
+        background:
+            linear-gradient(
+                135deg,
+                #7c3aed,
+                #06b6d4
+            );
+
+        box-shadow:
+            0 8px 25px rgba(124,58,237,0.30);
+
+        margin-bottom: 12px;
+    }
+
+
+    .member-name {
+        color: #f8fafc;
+
+        font-weight: 800;
+
+        font-size: 15px;
+    }
+
+
+    .member-role {
+        color: #94a3b8;
+
+        font-size: 12px;
+
+        margin-top: 4px;
+    }
+
+
+    /* ======================================================
+       GUIDE
+    ====================================================== */
+
+    .guide-card {
+        background:
+            linear-gradient(
+                145deg,
+                rgba(30,41,59,0.88),
+                rgba(15,23,42,0.78)
+            );
+
+        border:
+            1px solid rgba(167,139,250,0.20);
+
+        border-radius: 22px;
+
+        padding: 20px 24px;
+
+        box-shadow:
+            0 12px 35px rgba(0,0,0,0.22);
+    }
+
+
+    /* ======================================================
+       BUTTONS
+    ====================================================== */
+
+    div.stButton > button {
+
+        width: 100%;
+
+        min-height: 48px;
+
+        border-radius: 13px !important;
+
+        background:
+            linear-gradient(
+                135deg,
+                #7c3aed,
+                #2563eb
+            ) !important;
+
+        color: white !important;
+
+        border:
+            1px solid rgba(167,139,250,0.4) !important;
+
+        font-size: 14px !important;
+
+        font-weight: 800 !important;
+
+        box-shadow:
+            0 8px 25px rgba(124,58,237,0.25);
+
+        transition: 0.25s ease;
+    }
+
+
+    div.stButton > button:hover {
+
+        transform: translateY(-2px);
+
+        box-shadow:
+            0 12px 35px rgba(124,58,237,0.40);
+
+        border-color:
+            #a78bfa !important;
+    }
+
+
+    /* ======================================================
+       RADIO
+    ====================================================== */
+
+    div[data-testid="stRadio"] {
+
+        background:
+            rgba(15,23,42,0.65);
+
+        border:
+            1px solid rgba(148,163,184,0.14);
+
+        padding: 12px 18px;
+
+        border-radius: 16px;
+    }
+
+
+    div[data-testid="stRadio"] label {
+
+        color: #cbd5e1 !important;
+
+        font-weight: 700 !important;
+    }
+
+
+    /* ======================================================
+       FILE UPLOADER
+    ====================================================== */
+
+    div[data-testid="stFileUploader"] {
+
+        background:
+            rgba(15,23,42,0.65);
+
+        border:
+            1px dashed rgba(139,92,246,0.45);
+
+        border-radius: 16px;
+
+        padding: 10px;
+    }
+
+
+    /* ======================================================
+       CONTAINERS
+    ====================================================== */
+
+    div[data-testid="stVerticalBlockBorderWrapper"] {
+
+        background:
+            linear-gradient(
+                145deg,
+                rgba(30,41,59,0.80),
+                rgba(15,23,42,0.72)
+            ) !important;
+
+        border:
+            1px solid rgba(148,163,184,0.14) !important;
+
+        border-radius: 20px !important;
+
+        box-shadow:
+            0 15px 40px rgba(0,0,0,0.22);
+
+        padding: 10px !important;
+    }
+
+
+    /* ======================================================
+       TEXT
+    ====================================================== */
+
+    .stMarkdown,
+    .stMarkdown p,
+    .stMarkdown li {
+
+        color: #cbd5e1;
+    }
+
+
+    label {
+
+        color: #cbd5e1 !important;
+    }
+
+
+    /* ======================================================
+       CARD TITLE
+    ====================================================== */
+
+    .card-title {
+
+        color: #ffffff;
+
+        font-size: 20px;
+
+        font-weight: 900;
+
+        margin-bottom: 12px;
+    }
+
+
+    /* ======================================================
+       DETECTION
+    ====================================================== */
+
+    .detect-title {
+
+        text-align: center;
+
+        font-size: 44px;
+
+        font-weight: 900;
+
+        background:
+            linear-gradient(
+                90deg,
+                #c4b5fd,
+                #67e8f9,
+                #f9a8d4
+            );
+
+        -webkit-background-clip: text;
+
+        -webkit-text-fill-color: transparent;
+    }
+
+
+    .detect-subtitle {
+
+        text-align: center;
+
+        color: #94a3b8;
+
+        font-size: 15px;
+
+        margin-bottom: 28px;
+    }
+
+
+    /* ======================================================
+       SAFE
+    ====================================================== */
+
+    .safe-box {
+
+        margin-top: 16px;
+
+        padding: 18px;
+
+        border-radius: 16px;
+
+        background:
+            rgba(16,185,129,0.10);
+
+        border:
+            1px solid rgba(52,211,153,0.35);
+
+        color: #6ee7b7 !important;
+
+        font-weight: 800;
+    }
+
+
+    /* ======================================================
+       VIOLATION
+    ====================================================== */
+
+    .violation-box {
+
+        margin-top: 16px;
+
+        padding: 20px;
+
+        border-radius: 17px;
+
+        background:
+            linear-gradient(
+                135deg,
+                rgba(239,68,68,0.14),
+                rgba(127,29,29,0.12)
+            );
+
+        border:
+            1px solid rgba(248,113,113,0.42);
+
+        box-shadow:
+            0 10px 30px rgba(239,68,68,0.12);
+    }
+
+
+    .violation-title {
+
+        color: #fca5a5 !important;
+
+        font-size: 18px;
+
+        font-weight: 900;
+    }
+
+
+    .violation-text {
+
+        color: #fecaca !important;
+
+        font-size: 14px;
+
+        font-weight: 700;
+
+        margin-top: 8px;
+    }
+
+
+    /* ======================================================
+       FOOTER
+    ====================================================== */
+
+    .footer {
+
+        text-align: center;
+
+        color: #64748b;
+
+        font-size: 13px;
+
+        padding: 35px 0 10px 0;
+    }
+
+
+    /* ======================================================
+       MOBILE
+    ====================================================== */
+
+    @media(max-width: 900px) {
+
+        .hero-title {
+            font-size: 38px;
+        }
+
+        .detect-title {
+            font-size: 30px;
+        }
+
+        .block-container {
+            padding-left: 4%;
+            padding-right: 4%;
+        }
+
+    }
+
+    </style>
+    """
 )
 
 
@@ -766,26 +846,22 @@ def is_violation(name, confidence):
 
     normalized = normalize_class_name(name)
 
-    # Hardhat
     if normalized in {
         "no-hardhat",
         "no hardhat"
     }:
         return True
 
-    # Mask
     if normalized in {
         "no-mask",
         "no mask"
     }:
         return True
 
-    # Safety Vest
     if normalized in {
         "no-safety-vest",
         "no safety vest"
     }:
-
         return confidence >= NO_VEST_CONFIDENCE
 
     return False
@@ -821,25 +897,23 @@ def extract_detections(result):
             box.xyxy[0].tolist()
         )
 
-        detections.append({
-
-            "name": name,
-
-            "confidence": confidence,
-
-            "box": (
-                x1,
-                y1,
-                x2,
-                y2
-            ),
-
-            "violation":
-                is_violation(
-                    name,
-                    confidence
-                )
-        })
+        detections.append(
+            {
+                "name": name,
+                "confidence": confidence,
+                "box": (
+                    x1,
+                    y1,
+                    x2,
+                    y2
+                ),
+                "violation":
+                    is_violation(
+                        name,
+                        confidence
+                    )
+            }
+        )
 
     return detections
 
@@ -1121,7 +1195,6 @@ def send_push_notification(
     try:
 
         if not firebase_ready:
-
             return False
 
         message = messaging.Message(
@@ -1342,7 +1415,6 @@ def handle_violation_alert(
     if not violations:
         return
 
-    # Prevent duplicate alert for same detection
     violation_names = sorted(
         set(
             name
@@ -1356,8 +1428,6 @@ def handle_violation_alert(
         tuple(violation_names)
     )
 
-    # Only suppress repeated alerts
-    # during the same Streamlit rerun state
     if (
         st.session_state.last_alert_key
         == alert_key
@@ -1369,10 +1439,6 @@ def handle_violation_alert(
     location_data = st.session_state.get(
         "location"
     )
-
-    # --------------------------------------------------------
-    # LOCATION
-    # --------------------------------------------------------
 
     if not location_data:
 
@@ -1408,9 +1474,9 @@ def handle_violation_alert(
         violation_names
     )
 
-    # --------------------------------------------------------
+    # ========================================================
     # PUSH
-    # --------------------------------------------------------
+    # ========================================================
 
     if st.session_state.fcm_token:
 
@@ -1437,9 +1503,9 @@ def handle_violation_alert(
                 "⚠️ Push notification failed."
             )
 
-    # --------------------------------------------------------
+    # ========================================================
     # EMAIL
-    # --------------------------------------------------------
+    # ========================================================
 
     email_success = send_email_alert(
         violations,
@@ -1483,7 +1549,6 @@ def display_violation_box(
     for name, confidence in violations:
 
         if name not in names:
-
             names.append(name)
 
     text = ", ".join(names)
@@ -1532,9 +1597,11 @@ def display_safe_box():
 
 if st.session_state.page == "home":
 
+    # ========================================================
     # HERO
+    # ========================================================
 
-    st.markdown(
+    render_html(
         """
         <div class="home-hero">
 
@@ -1551,12 +1618,13 @@ if st.session_state.page == "home":
             </div>
 
         </div>
-        """,
-        unsafe_allow_html=True
+        """
     )
 
 
+    # ========================================================
     # TOP CARDS
+    # ========================================================
 
     left_col, right_col = st.columns(
         [0.40, 0.60],
@@ -1564,11 +1632,13 @@ if st.session_state.page == "home":
     )
 
 
+    # ========================================================
     # AICW
+    # ========================================================
 
     with left_col:
 
-        st.markdown(
+        render_html(
             """
             <div class="home-card aicw-card">
 
@@ -1589,8 +1659,7 @@ if st.session_state.page == "home":
                 </div>
 
             </div>
-            """,
-            unsafe_allow_html=True
+            """
         )
 
         st.write("")
@@ -1605,11 +1674,13 @@ if st.session_state.page == "home":
             st.rerun()
 
 
+    # ========================================================
     # ABOUT
+    # ========================================================
 
     with right_col:
 
-        st.markdown(
+        render_html(
             """
             <div class="home-card">
 
@@ -1639,8 +1710,7 @@ if st.session_state.page == "home":
                 </div>
 
             </div>
-            """,
-            unsafe_allow_html=True
+            """
         )
 
 
@@ -1648,15 +1718,16 @@ if st.session_state.page == "home":
     st.write("")
 
 
+    # ========================================================
     # TEAM
+    # ========================================================
 
-    st.markdown(
+    render_html(
         """
         <div class="team-heading">
             👩🏻‍💻 Our Team
         </div>
-        """,
-        unsafe_allow_html=True
+        """
     )
 
 
@@ -1668,7 +1739,7 @@ if st.session_state.page == "home":
 
     with c1:
 
-        st.markdown(
+        render_html(
             """
             <div class="team-card">
 
@@ -1685,14 +1756,13 @@ if st.session_state.page == "home":
                 </div>
 
             </div>
-            """,
-            unsafe_allow_html=True
+            """
         )
 
 
     with c2:
 
-        st.markdown(
+        render_html(
             """
             <div class="team-card">
 
@@ -1709,14 +1779,13 @@ if st.session_state.page == "home":
                 </div>
 
             </div>
-            """,
-            unsafe_allow_html=True
+            """
         )
 
 
     with c3:
 
-        st.markdown(
+        render_html(
             """
             <div class="team-card">
 
@@ -1733,14 +1802,13 @@ if st.session_state.page == "home":
                 </div>
 
             </div>
-            """,
-            unsafe_allow_html=True
+            """
         )
 
 
     with c4:
 
-        st.markdown(
+        render_html(
             """
             <div class="team-card">
 
@@ -1757,8 +1825,7 @@ if st.session_state.page == "home":
                 </div>
 
             </div>
-            """,
-            unsafe_allow_html=True
+            """
         )
 
 
@@ -1766,9 +1833,11 @@ if st.session_state.page == "home":
     st.write("")
 
 
+    # ========================================================
     # GUIDE
+    # ========================================================
 
-    st.markdown(
+    render_html(
         """
         <div class="guide-card">
 
@@ -1800,20 +1869,20 @@ if st.session_state.page == "home":
             </div>
 
         </div>
-        """,
-        unsafe_allow_html=True
+        """
     )
 
 
+    # ========================================================
     # FOOTER
+    # ========================================================
 
-    st.markdown(
+    render_html(
         """
         <div class="footer">
             🦺 GuardX-AI • Building Safer Construction Sites with AI
         </div>
-        """,
-        unsafe_allow_html=True
+        """
     )
 
 
@@ -2114,6 +2183,7 @@ elif st.session_state.page == "predict":
                     "Location permission was not available."
                 )
 
+
         if st.session_state.location:
 
             latitude = st.session_state.location[
@@ -2270,7 +2340,6 @@ elif st.session_state.page == "predict":
                             violations
                         )
 
-                        # Reset alert key for new detection
                         st.session_state.last_alert_key = None
 
                         if violations:
@@ -2431,7 +2500,6 @@ elif st.session_state.page == "predict":
                         )
                     )
 
-                    # New camera detection = new alert
                     st.session_state.last_alert_key = None
 
                     if violations:
@@ -2704,7 +2772,6 @@ elif st.session_state.page == "predict":
                         )
 
 
-                        # One alert only after complete video
                         st.session_state.last_alert_key = None
 
                         handle_violation_alert(
