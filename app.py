@@ -46,7 +46,8 @@ defaults = {
     "result_image": None,
     "detections": [],
     "image_violations": [],
-    "video_output": None
+    "video_output": None,
+    "last_alert_key": None
 }
 
 for key, value in defaults.items():
@@ -59,14 +60,13 @@ for key, value in defaults.items():
 # ============================================================
 
 GENERAL_CONFIDENCE = 0.30
+
+# NO-Safety Vest false detections ni reduce cheyyadaniki
 NO_VEST_CONFIDENCE = 0.75
 
 
 # ============================================================
-# HTML RENDER HELPER
-# IMPORTANT:
-# dedent removes leading spaces so HTML will NOT appear
-# as plain code/text on the page.
+# HTML HELPER
 # ============================================================
 
 def render_html(content):
@@ -77,7 +77,7 @@ def render_html(content):
 
 
 # ============================================================
-# FIREBASE ADMIN
+# FIREBASE INITIALIZATION
 # ============================================================
 
 def initialize_firebase():
@@ -95,6 +95,7 @@ def initialize_firebase():
         )
 
         if "private_key" in firebase_config:
+
             firebase_config["private_key"] = (
                 firebase_config["private_key"]
                 .replace("\\n", "\n")
@@ -196,7 +197,7 @@ footer {
 
 
 /* =========================================================
-   HOME HERO
+   HOME
 ========================================================= */
 
 .home-hero {
@@ -206,34 +207,21 @@ footer {
 
 .hero-badge {
     display: inline-block;
-
     padding: 7px 15px;
-
     border-radius: 30px;
-
     background: rgba(139,92,246,0.14);
-
-    border:
-        1px solid rgba(167,139,250,0.35);
-
+    border: 1px solid rgba(167,139,250,0.35);
     color: #c4b5fd;
-
     font-size: 13px;
-
     font-weight: 700;
-
     margin-bottom: 15px;
 }
 
 .hero-title {
     font-size: 56px;
-
     line-height: 1.1;
-
     font-weight: 900;
-
     letter-spacing: -2px;
-
     background:
         linear-gradient(
             90deg,
@@ -242,24 +230,20 @@ footer {
             #67e8f9,
             #f9a8d4
         );
-
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
 }
 
 .hero-subtitle {
     color: #cbd5e1;
-
     font-size: 19px;
-
     font-weight: 600;
-
     margin-top: 10px;
 }
 
 
 /* =========================================================
-   HOME CARDS
+   CARDS
 ========================================================= */
 
 .home-card {
@@ -296,55 +280,37 @@ footer {
 
 .aicw-card {
     min-height: 330px;
-
     display: flex;
-
     flex-direction: column;
-
     justify-content: center;
 }
 
 .aicw-icon {
     font-size: 58px;
-
     margin-bottom: 15px;
 }
 
 .aicw-title {
     font-size: 30px;
-
     font-weight: 900;
-
     color: #ffffff;
 }
 
 .aicw-subtitle {
     color: #a78bfa;
-
     font-size: 18px;
-
     font-weight: 700;
-
     margin-top: 8px;
 }
 
 .capstone {
     margin-top: 22px;
-
     padding: 9px 15px;
-
     border-radius: 30px;
-
-    background:
-        rgba(34,211,238,0.10);
-
-    border:
-        1px solid rgba(34,211,238,0.25);
-
+    background: rgba(34,211,238,0.10);
+    border: 1px solid rgba(34,211,238,0.25);
     color: #67e8f9;
-
     font-weight: 700;
-
     display: inline-block;
 }
 
@@ -355,19 +321,14 @@ footer {
 
 .about-title {
     color: #ffffff;
-
     font-size: 20px;
-
     font-weight: 850;
-
     margin-bottom: 14px;
 }
 
 .about-text {
     color: #aab5c7;
-
     font-size: 14px;
-
     line-height: 1.8;
 }
 
@@ -378,11 +339,8 @@ footer {
 
 .team-heading {
     color: #f8fafc;
-
     font-size: 22px;
-
     font-weight: 900;
-
     margin: 12px 0 16px 0;
 }
 
@@ -409,15 +367,11 @@ footer {
 
 .avatar {
     width: 56px;
-
     height: 56px;
-
     border-radius: 50%;
 
     display: flex;
-
     align-items: center;
-
     justify-content: center;
 
     font-size: 28px;
@@ -437,17 +391,13 @@ footer {
 
 .member-name {
     color: #f8fafc;
-
     font-weight: 800;
-
     font-size: 15px;
 }
 
 .member-role {
     color: #94a3b8;
-
     font-size: 12px;
-
     margin-top: 4px;
 }
 
@@ -481,6 +431,7 @@ footer {
 ========================================================= */
 
 div.stButton > button {
+
     width: 100%;
 
     min-height: 48px;
@@ -510,6 +461,7 @@ div.stButton > button {
 }
 
 div.stButton > button:hover {
+
     transform: translateY(-2px);
 
     box-shadow:
@@ -525,6 +477,7 @@ div.stButton > button:hover {
 ========================================================= */
 
 div[data-testid="stRadio"] {
+
     background:
         rgba(15,23,42,0.65);
 
@@ -537,6 +490,7 @@ div[data-testid="stRadio"] {
 }
 
 div[data-testid="stRadio"] label {
+
     color: #cbd5e1 !important;
 
     font-weight: 700 !important;
@@ -548,6 +502,7 @@ div[data-testid="stRadio"] label {
 ========================================================= */
 
 div[data-testid="stFileUploader"] {
+
     background:
         rgba(15,23,42,0.65);
 
@@ -561,10 +516,11 @@ div[data-testid="stFileUploader"] {
 
 
 /* =========================================================
-   STREAMLIT CONTAINERS
+   CONTAINERS
 ========================================================= */
 
 div[data-testid="stVerticalBlockBorderWrapper"] {
+
     background:
         linear-gradient(
             145deg,
@@ -604,6 +560,7 @@ label {
 ========================================================= */
 
 .card-title {
+
     color: #ffffff;
 
     font-size: 20px;
@@ -619,6 +576,7 @@ label {
 ========================================================= */
 
 .detect-title {
+
     text-align: center;
 
     font-size: 44px;
@@ -639,6 +597,7 @@ label {
 }
 
 .detect-subtitle {
+
     text-align: center;
 
     color: #94a3b8;
@@ -654,6 +613,7 @@ label {
 ========================================================= */
 
 .safe-box {
+
     margin-top: 16px;
 
     padding: 18px;
@@ -677,6 +637,7 @@ label {
 ========================================================= */
 
 .violation-box {
+
     margin-top: 16px;
 
     padding: 20px;
@@ -698,6 +659,7 @@ label {
 }
 
 .violation-title {
+
     color: #fca5a5 !important;
 
     font-size: 18px;
@@ -706,6 +668,7 @@ label {
 }
 
 .violation-text {
+
     color: #fecaca !important;
 
     font-size: 14px;
@@ -717,29 +680,11 @@ label {
 
 
 /* =========================================================
-   ALERT
-========================================================= */
-
-.alert-card {
-    padding: 16px;
-
-    border-radius: 15px;
-
-    background:
-        rgba(59,130,246,0.08);
-
-    border:
-        1px solid rgba(96,165,250,0.22);
-
-    color: #bfdbfe;
-}
-
-
-/* =========================================================
    FOOTER
 ========================================================= */
 
 .footer {
+
     text-align: center;
 
     color: #64748b;
@@ -768,6 +713,7 @@ label {
         padding-left: 4%;
         padding-right: 4%;
     }
+
 }
 
 </style>
@@ -798,7 +744,7 @@ def load_model():
 
 
 # ============================================================
-# NORMALIZE CLASS NAME
+# NORMALIZE CLASS
 # ============================================================
 
 def normalize_class_name(name):
@@ -813,25 +759,28 @@ def normalize_class_name(name):
 
 
 # ============================================================
-# IS VIOLATION
+# VIOLATION LOGIC
 # ============================================================
 
 def is_violation(name, confidence):
 
     normalized = normalize_class_name(name)
 
+    # Hardhat
     if normalized in {
         "no-hardhat",
         "no hardhat"
     }:
         return True
 
+    # Mask
     if normalized in {
         "no-mask",
         "no mask"
     }:
         return True
 
+    # Safety Vest
     if normalized in {
         "no-safety-vest",
         "no safety vest"
@@ -885,10 +834,11 @@ def extract_detections(result):
                 y2
             ),
 
-            "violation": is_violation(
-                name,
-                confidence
-            )
+            "violation":
+                is_violation(
+                    name,
+                    confidence
+                )
         })
 
     return detections
@@ -917,7 +867,7 @@ def get_violations(detections):
 
 
 # ============================================================
-# CUSTOM BOXES
+# DRAW CUSTOM BOXES
 # ============================================================
 
 def draw_custom_boxes(
@@ -945,21 +895,9 @@ def draw_custom_boxes(
                 255
             )
 
-            label_color = (
-                40,
-                40,
-                255
-            )
-
         else:
 
             color = (
-                0,
-                220,
-                190
-            )
-
-            label_color = (
                 0,
                 220,
                 190
@@ -1009,7 +947,7 @@ def draw_custom_boxes(
                 x1 + tw + 10,
                 label_y
             ),
-            label_color,
+            color,
             -1
         )
 
@@ -1035,7 +973,7 @@ def draw_custom_boxes(
 
 
 # ============================================================
-# LIVE LOCATION
+# LOCATION
 # ============================================================
 
 def get_live_location():
@@ -1171,7 +1109,7 @@ def get_fcm_token():
 
 
 # ============================================================
-# PUSH NOTIFICATION
+# SEND PUSH
 # ============================================================
 
 def send_push_notification(
@@ -1183,6 +1121,7 @@ def send_push_notification(
     try:
 
         if not firebase_ready:
+
             return False
 
         message = messaging.Message(
@@ -1208,7 +1147,7 @@ def send_push_notification(
 
 
 # ============================================================
-# EMAIL ALERT
+# SEND EMAIL
 # ============================================================
 
 def send_email_alert(
@@ -1403,9 +1342,37 @@ def handle_violation_alert(
     if not violations:
         return
 
+    # Prevent duplicate alert for same detection
+    violation_names = sorted(
+        set(
+            name
+            for name, confidence
+            in violations
+        )
+    )
+
+    alert_key = (
+        source,
+        tuple(violation_names)
+    )
+
+    # Only suppress repeated alerts
+    # during the same Streamlit rerun state
+    if (
+        st.session_state.last_alert_key
+        == alert_key
+    ):
+        return
+
+    st.session_state.last_alert_key = alert_key
+
     location_data = st.session_state.get(
         "location"
     )
+
+    # --------------------------------------------------------
+    # LOCATION
+    # --------------------------------------------------------
 
     if not location_data:
 
@@ -1438,16 +1405,13 @@ def handle_violation_alert(
             location_data = None
 
     violation_text = ", ".join(
-        sorted(
-            set(
-                name
-                for name, confidence
-                in violations
-            )
-        )
+        violation_names
     )
 
+    # --------------------------------------------------------
     # PUSH
+    # --------------------------------------------------------
+
     if st.session_state.fcm_token:
 
         push_success = (
@@ -1473,7 +1437,10 @@ def handle_violation_alert(
                 "⚠️ Push notification failed."
             )
 
+    # --------------------------------------------------------
     # EMAIL
+    # --------------------------------------------------------
+
     email_success = send_email_alert(
         violations,
         source,
@@ -1565,9 +1532,7 @@ def display_safe_box():
 
 if st.session_state.page == "home":
 
-    # ========================================================
-    # HERO SECTION
-    # ========================================================
+    # HERO
 
     st.markdown(
         """
@@ -1591,9 +1556,7 @@ if st.session_state.page == "home":
     )
 
 
-    # ========================================================
     # TOP CARDS
-    # ========================================================
 
     left_col, right_col = st.columns(
         [0.40, 0.60],
@@ -1601,9 +1564,7 @@ if st.session_state.page == "home":
     )
 
 
-    # ========================================================
-    # AICW CARD
-    # ========================================================
+    # AICW
 
     with left_col:
 
@@ -1644,9 +1605,7 @@ if st.session_state.page == "home":
             st.rerun()
 
 
-    # ========================================================
-    # ABOUT CARD
-    # ========================================================
+    # ABOUT
 
     with right_col:
 
@@ -1689,9 +1648,7 @@ if st.session_state.page == "home":
     st.write("")
 
 
-    # ========================================================
-    # TEAM HEADING
-    # ========================================================
+    # TEAM
 
     st.markdown(
         """
@@ -1703,19 +1660,11 @@ if st.session_state.page == "home":
     )
 
 
-    # ========================================================
-    # TEAM MEMBERS
-    # ========================================================
-
     c1, c2, c3, c4 = st.columns(
         4,
         gap="medium"
     )
 
-
-    # ========================================================
-    # MEMBER 1
-    # ========================================================
 
     with c1:
 
@@ -1741,10 +1690,6 @@ if st.session_state.page == "home":
         )
 
 
-    # ========================================================
-    # MEMBER 2
-    # ========================================================
-
     with c2:
 
         st.markdown(
@@ -1769,10 +1714,6 @@ if st.session_state.page == "home":
         )
 
 
-    # ========================================================
-    # MEMBER 3
-    # ========================================================
-
     with c3:
 
         st.markdown(
@@ -1796,10 +1737,6 @@ if st.session_state.page == "home":
             unsafe_allow_html=True
         )
 
-
-    # ========================================================
-    # MEMBER 4
-    # ========================================================
 
     with c4:
 
@@ -1829,9 +1766,7 @@ if st.session_state.page == "home":
     st.write("")
 
 
-    # ========================================================
-    # GUIDE CARD
-    # ========================================================
+    # GUIDE
 
     st.markdown(
         """
@@ -1870,9 +1805,7 @@ if st.session_state.page == "home":
     )
 
 
-    # ========================================================
     # FOOTER
-    # ========================================================
 
     st.markdown(
         """
@@ -1888,14 +1821,11 @@ if st.session_state.page == "home":
 # PREDICTION PAGE
 # ============================================================
 
-else:
+elif st.session_state.page == "predict":
 
-
-# ============================================================
-# PREDICTION PAGE
-# ============================================================
-
-else:
+    # ========================================================
+    # TITLE
+    # ========================================================
 
     render_html(
         """
@@ -1912,7 +1842,7 @@ else:
 
 
     # ========================================================
-    # MODEL
+    # LOAD MODEL
     # ========================================================
 
     try:
@@ -1960,9 +1890,8 @@ else:
         )
 
         st.caption(
-            f"Detection confidence: "
-            f"{GENERAL_CONFIDENCE:.2f} "
-            f"| NO-Safety Vest: "
+            f"General confidence: {GENERAL_CONFIDENCE:.2f} "
+            f"| NO-Safety Vest threshold: "
             f"{NO_VEST_CONFIDENCE:.2f}"
         )
 
@@ -2341,6 +2270,9 @@ else:
                             violations
                         )
 
+                        # Reset alert key for new detection
+                        st.session_state.last_alert_key = None
+
                         if violations:
 
                             handle_violation_alert(
@@ -2499,6 +2431,9 @@ else:
                         )
                     )
 
+                    # New camera detection = new alert
+                    st.session_state.last_alert_key = None
+
                     if violations:
 
                         display_violation_box(
@@ -2609,7 +2544,6 @@ else:
                         )
 
                         if fps <= 0:
-
                             fps = 20
 
                         width = int(
@@ -2624,6 +2558,17 @@ else:
                             )
                         )
 
+                        if width <= 0 or height <= 0:
+
+                            cap.release()
+
+                            st.error(
+                                "❌ Video dimensions could not be read."
+                            )
+
+                            st.stop()
+
+
                         output_file = (
                             tempfile.NamedTemporaryFile(
                                 delete=False,
@@ -2636,6 +2581,7 @@ else:
                         )
 
                         output_file.close()
+
 
                         fourcc = (
                             cv2.VideoWriter_fourcc(
@@ -2653,7 +2599,9 @@ else:
                             )
                         )
 
+
                         video_violations = set()
+
 
                         while True:
 
@@ -2664,17 +2612,20 @@ else:
                             if not ret:
                                 break
 
+
                             result = model.predict(
                                 frame,
                                 conf=GENERAL_CONFIDENCE,
                                 verbose=False
                             )[0]
 
+
                             detections = (
                                 extract_detections(
                                     result
                                 )
                             )
+
 
                             annotated = (
                                 draw_custom_boxes(
@@ -2683,15 +2634,18 @@ else:
                                 )
                             )
 
+
                             writer.write(
                                 annotated
                             )
+
 
                             frame_violations = (
                                 get_violations(
                                     detections
                                 )
                             )
+
 
                             for (
                                 name,
@@ -2702,9 +2656,11 @@ else:
                                     name
                                 )
 
+
                         cap.release()
 
                         writer.release()
+
 
                         try:
 
@@ -2716,13 +2672,16 @@ else:
 
                             pass
 
+
                     st.success(
                         "✅ Video processing completed!"
                     )
 
+
                     st.video(
                         output_path
                     )
+
 
                     if video_violations:
 
@@ -2734,17 +2693,25 @@ else:
                             )
 
                             for name
-                            in video_violations
+                            in sorted(
+                                video_violations
+                            )
                         ]
+
 
                         display_violation_box(
                             video_violation_list
                         )
 
+
+                        # One alert only after complete video
+                        st.session_state.last_alert_key = None
+
                         handle_violation_alert(
                             video_violation_list,
                             "video"
                         )
+
 
                     else:
 
