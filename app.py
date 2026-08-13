@@ -25,7 +25,7 @@ from streamlit_js_eval import streamlit_js_eval
 
 st.set_page_config(
     page_title="GuardX-AI",
-    page_icon="🦺",
+    page_icon="🛡️",
     layout="wide",
     initial_sidebar_state="collapsed"
 )
