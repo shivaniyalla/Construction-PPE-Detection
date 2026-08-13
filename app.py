@@ -9,7 +9,14 @@ import json
 import smtplib
 from email.message import EmailMessage
 from datetime import datetime
+
+# Firebase
 import firebase_admin
+from firebase_admin import credentials, messaging
+
+# Browser JS
+from streamlit_js_eval import streamlit_js_eval
+
 
 # ============================================================
 # PAGE CONFIG
@@ -39,16 +46,17 @@ if "push_enabled" not in st.session_state:
 if "firebase_ready" not in st.session_state:
     st.session_state.firebase_ready = False
 
+if "location" not in st.session_state:
+    st.session_state.location = None
+
 
 # ============================================================
 # DETECTION SETTINGS
 # ============================================================
 
-# General detection confidence
 GENERAL_CONFIDENCE = 0.30
 
-# Higher threshold specifically for NO-Safety Vest
-# This reduces false NO-Safety Vest detections.
+# NO-Safety Vest false detections reduce cheyyadaniki
 NO_VEST_CONFIDENCE = 0.75
 
 
@@ -118,8 +126,6 @@ st.markdown(
         visibility: hidden;
     }
 
-    /* HOME */
-
     .main-title {
         color: #17345f !important;
         font-size: 32px !important;
@@ -149,15 +155,11 @@ st.markdown(
         margin-bottom: 12px;
     }
 
-    /* GENERAL */
-
     .stMarkdown,
     .stMarkdown p,
     .stMarkdown li {
         color: #374151;
     }
-
-    /* CARDS */
 
     div[data-testid="stVerticalBlockBorderWrapper"] {
         background: #ffffff !important;
@@ -180,8 +182,6 @@ st.markdown(
         line-height: 2.2 !important;
     }
 
-    /* BUTTONS */
-
     div.stButton > button {
         width: 100%;
         height: 45px;
@@ -199,8 +199,6 @@ st.markdown(
         background: #f8fafc !important;
     }
 
-    /* RADIO / INPUT */
-
     div[data-testid="stRadio"] label {
         color: #334155 !important;
         font-weight: 600 !important;
@@ -215,16 +213,12 @@ st.markdown(
         color: #334155 !important;
     }
 
-    /* FOOTER */
-
     .footer-text {
         color: #6b7280 !important;
         text-align: center;
         font-size: 14px;
         margin-top: 32px;
     }
-
-    /* DETECTION */
 
     .detect-title {
         color: #17345f !important;
@@ -241,8 +235,6 @@ st.markdown(
         margin-bottom: 25px;
     }
 
-    /* SAFE */
-
     .safe-box {
         background: #ecfdf5;
         border: 1px solid #a7f3d0;
@@ -252,8 +244,6 @@ st.markdown(
         font-weight: 700;
         margin-top: 15px;
     }
-
-    /* VIOLATION */
 
     .violation-box {
         background: #fef2f2;
@@ -275,17 +265,6 @@ st.markdown(
         font-size: 15px;
         font-weight: 600;
         color: #991b1b !important;
-    }
-
-    /* MODEL */
-
-    .model-box {
-        background: #f8fafc;
-        border: 1px solid #e2e8f0;
-        border-radius: 12px;
-        padding: 12px;
-        margin-top: 10px;
-        color: #334155 !important;
     }
 
     @media(max-width: 900px) {
@@ -368,6 +347,64 @@ VAPID_KEY = (
     "BGE1N7sXhztv_V_XZ8yxQR9dn74UMgg17UKGmigh"
     "YXZGmW1sGfOCHSAqyIvJZ77GeS2-tnlgBbLVTmAVgJrdQ7M"
 )
+
+
+# ============================================================
+# GET BROWSER LIVE LOCATION
+# ============================================================
+
+def get_live_location():
+
+    js_code = """
+    (async () => {
+
+        try {
+
+            if (!navigator.geolocation) {
+                return "LOCATION_NOT_SUPPORTED";
+            }
+
+            const position = await new Promise(
+                (resolve, reject) => {
+
+                    navigator.geolocation.getCurrentPosition(
+                        resolve,
+                        reject,
+                        {
+                            enableHighAccuracy: true,
+                            timeout: 10000,
+                            maximumAge: 0
+                        }
+                    );
+
+                }
+            );
+
+            const latitude =
+                position.coords.latitude;
+
+            const longitude =
+                position.coords.longitude;
+
+            return JSON.stringify({
+                latitude: latitude,
+                longitude: longitude
+            });
+
+        } catch(error) {
+
+            return "LOCATION_ERROR:" + error.message;
+
+        }
+
+    })();
+    """
+
+    return streamlit_js_eval(
+        js_expressions=js_code,
+        want_output=True,
+        key="live_location"
+    )
 
 
 # ============================================================
@@ -457,11 +494,7 @@ def get_fcm_token():
 # SEND PUSH NOTIFICATION
 # ============================================================
 
-def send_push_notification(
-    token,
-    title,
-    body
-):
+def send_push_notification(token, title, body):
 
     try:
 
@@ -493,80 +526,141 @@ def send_push_notification(
 # SEND GMAIL SAFETY ALERT
 # ============================================================
 
-def send_email_alert(violations, source="image"):
+def send_email_alert(
+    violations,
+    source="image",
+    location_data=None
+):
 
     try:
 
         sender = st.secrets["EMAIL_SENDER"]
         password = st.secrets["EMAIL_PASSWORD"]
         receiver = st.secrets["EMAIL_RECEIVER"]
-        location = st.secrets.get(
-            "LOCATION",
-            "Construction Site"
-        )
 
-        # Current date and time
+        # ----------------------------------------------------
+        # DATE / TIME
+        # ----------------------------------------------------
+
         now = datetime.now()
 
-        date_text = now.strftime("%d-%b-%Y")
-        time_text = now.strftime("%I:%M %p")
+        date_text = now.strftime(
+            "%d-%b-%Y"
+        )
 
-        # Violation names
+        time_text = now.strftime(
+            "%I:%M:%S %p"
+        )
+
+        # ----------------------------------------------------
+        # VIOLATIONS
+        # ----------------------------------------------------
+
         violation_text = ", ".join(
             sorted(
                 set(
                     name
-                    for name, confidence in violations
+                    for name, confidence
+                    in violations
                 )
             )
         )
 
-        # Email subject
+        # ----------------------------------------------------
+        # LOCATION
+        # ----------------------------------------------------
+
+        if location_data:
+
+            latitude = location_data["latitude"]
+            longitude = location_data["longitude"]
+
+            maps_link = (
+                f"https://www.google.com/maps/"
+                f"search/?api=1&query="
+                f"{latitude},{longitude}"
+            )
+
+            location_text = (
+                f"Latitude  : {latitude}\n"
+                f"Longitude : {longitude}\n"
+                f"Google Maps: {maps_link}"
+            )
+
+        else:
+
+            fixed_location = st.secrets.get(
+                "LOCATION",
+                "Location unavailable"
+            )
+
+            location_text = (
+                f"Location : {fixed_location}\n"
+                f"Google Maps : Location unavailable"
+            )
+
+        # ----------------------------------------------------
+        # EMAIL SUBJECT
+        # ----------------------------------------------------
+
         subject = (
-            f"🚨 GuardX-AI Safety Alert - "
+            f"🚨 GuardX-AI Safety Alert | "
             f"{violation_text}"
         )
 
-        # Email body
+        # ----------------------------------------------------
+        # EMAIL BODY
+        # ----------------------------------------------------
+
         body = f"""
-GUARDX-AI SAFETY ALERT
-======================
+GUARDX-AI
+AI-POWERED CONSTRUCTION PPE DETECTION SYSTEM
+================================================
 
 🚨 PPE SAFETY VIOLATION DETECTED
 
-GuardX-AI has detected a potential PPE safety
-violation at the construction site.
+GuardX-AI has detected a potential PPE violation.
 
-----------------------------------------
+------------------------------------------------
 VIOLATION DETAILS
-----------------------------------------
+------------------------------------------------
 
 Violation        : {violation_text}
 Detection Source : {source}
-Location         : {location}
 Date             : {date_text}
 Time             : {time_text}
 
-----------------------------------------
-SAFETY ACTION
-----------------------------------------
+------------------------------------------------
+LOCATION
+------------------------------------------------
 
-Please immediately verify the detected worker
-and ensure that the required Personal Protective
-Equipment (PPE) is being used correctly.
+{location_text}
 
-GuardX-AI recommends immediate safety verification.
+------------------------------------------------
+SAFETY ACTION REQUIRED
+------------------------------------------------
 
-----------------------------------------
+Please immediately verify the detected worker.
 
-This alert was automatically generated by
-GuardX-AI – AI-Powered Construction PPE
-Detection System.
+Ensure that the required Personal Protective
+Equipment (PPE) is being worn correctly.
 
-Please do not ignore this safety alert.
+This alert indicates a potential unsafe
+working condition and should be verified
+immediately.
+
+------------------------------------------------
+
+GuardX-AI
+Construction PPE Safety Monitoring System
+
+This is an automatically generated safety alert.
 """
 
-        # Create email
+        # ----------------------------------------------------
+        # CREATE EMAIL
+        # ----------------------------------------------------
+
         message = EmailMessage()
 
         message["From"] = sender
@@ -575,7 +669,10 @@ Please do not ignore this safety alert.
 
         message.set_content(body)
 
-        # Send through Gmail SMTP
+        # ----------------------------------------------------
+        # SEND THROUGH GMAIL
+        # ----------------------------------------------------
+
         with smtplib.SMTP(
             "smtp.gmail.com",
             587
@@ -599,7 +696,8 @@ Please do not ignore this safety alert.
         st.session_state.email_error = str(e)
 
         return False
-        
+
+
 # ============================================================
 # EXTRACT DETECTIONS
 # ============================================================
@@ -641,9 +739,14 @@ def extract_detections(result):
 
 def normalize_class_name(name):
 
-    normalized = str(name).lower().strip()
+    normalized = str(
+        name
+    ).lower().strip()
 
-    normalized = normalized.replace("_", "-")
+    normalized = normalized.replace(
+        "_",
+        "-"
+    )
 
     normalized = " ".join(
         normalized.split()
@@ -659,7 +762,7 @@ def normalize_class_name(name):
 def get_violations(detections):
 
     """
-    Actual dataset/model mapping:
+    GuardX-AI classes:
 
     0 -> Hardhat
     1 -> NO-Hardhat
@@ -668,41 +771,27 @@ def get_violations(detections):
     4 -> Safety Vest
     5 -> NO-Safety Vest
 
-    Safety Vest is NOT a violation.
+    IMPORTANT:
 
-    NO-Safety Vest is considered a violation only
-    when confidence >= NO_VEST_CONFIDENCE.
+    Class 4 has ZERO annotations in dataset.
+
+    Therefore we DO NOT rely on positive
+    Safety Vest detection.
+
+    NO-Safety Vest is considered a violation
+    only when confidence >= 0.75.
     """
 
     violations = []
 
-    positive_vest_detected = False
-
-    # --------------------------------------------------------
-    # First check if Safety Vest is detected
-    # --------------------------------------------------------
-
     for name, confidence in detections:
 
-        normalized_name = normalize_class_name(name)
-
-        if normalized_name in {
-            "safety vest",
-            "safety-vest"
-        }:
-
-            positive_vest_detected = True
-
-    # --------------------------------------------------------
-    # Check violations
-    # --------------------------------------------------------
-
-    for name, confidence in detections:
-
-        normalized_name = normalize_class_name(name)
+        normalized_name = normalize_class_name(
+            name
+        )
 
         # --------------------------------------------
-        # NO-Hardhat
+        # NO HARDHAT
         # --------------------------------------------
 
         if normalized_name in {
@@ -718,7 +807,7 @@ def get_violations(detections):
             )
 
         # --------------------------------------------
-        # NO-Mask
+        # NO MASK
         # --------------------------------------------
 
         elif normalized_name in {
@@ -734,7 +823,7 @@ def get_violations(detections):
             )
 
         # --------------------------------------------
-        # NO-Safety Vest
+        # NO SAFETY VEST
         # --------------------------------------------
 
         elif normalized_name in {
@@ -742,12 +831,6 @@ def get_violations(detections):
             "no safety vest"
         }:
 
-            # If positive Safety Vest is detected,
-            # suppress NO-Safety Vest.
-            if positive_vest_detected:
-                continue
-
-            # Only accept high-confidence NO-Safety Vest.
             if confidence >= NO_VEST_CONFIDENCE:
 
                 violations.append(
@@ -774,7 +857,10 @@ def display_violation_box(violations):
     for name, confidence in violations:
 
         if name not in violation_names:
-            violation_names.append(name)
+
+            violation_names.append(
+                name
+            )
 
     violation_text = ", ".join(
         violation_names
@@ -816,7 +902,7 @@ def display_safe_box():
 
 
 # ============================================================
-# SEND VIOLATION ALERT
+# HANDLE VIOLATION ALERT
 # ============================================================
 
 def handle_violation_alert(
@@ -826,6 +912,43 @@ def handle_violation_alert(
 
     if not violations:
         return
+
+    # --------------------------------------------------------
+    # LOCATION
+    # --------------------------------------------------------
+
+    location_data = None
+
+    try:
+
+        location_result = get_live_location()
+
+        if location_result:
+
+            if isinstance(
+                location_result,
+                str
+            ):
+
+                if location_result.startswith(
+                    "{"
+                ):
+
+                    location_data = json.loads(
+                        location_result
+                    )
+
+                    st.session_state.location = (
+                        location_data
+                    )
+
+    except Exception:
+
+        location_data = None
+
+    # --------------------------------------------------------
+    # VIOLATION TEXT
+    # --------------------------------------------------------
 
     violation_text = ", ".join(
         sorted(
@@ -837,11 +960,15 @@ def handle_violation_alert(
         )
     )
 
+    # --------------------------------------------------------
+    # PUSH NOTIFICATION
+    # --------------------------------------------------------
+
     title = "🚨 GuardX-AI Safety Alert"
 
     body = (
-        f"PPE violation detected in "
-        f"{source}: {violation_text}"
+        f"PPE violation detected: "
+        f"{violation_text}"
     )
 
     if st.session_state.fcm_token:
@@ -858,11 +985,33 @@ def handle_violation_alert(
                 "📲 Safety push notification sent!"
             )
 
-        else:
+    # --------------------------------------------------------
+    # GMAIL ALERT
+    # --------------------------------------------------------
 
-            st.warning(
-                "⚠️ Violation detected, "
-                "but push notification could not be sent."
+    email_success = send_email_alert(
+        violations,
+        source,
+        location_data
+    )
+
+    if email_success:
+
+        st.success(
+            "📧 Safety alert sent to Gmail!"
+        )
+
+    else:
+
+        st.warning(
+            "⚠️ Violation detected, but Gmail alert "
+            "could not be sent."
+        )
+
+        if "email_error" in st.session_state:
+
+            st.caption(
+                st.session_state.email_error
             )
 
 
@@ -885,10 +1034,6 @@ if st.session_state.page == "home":
         [0.38, 0.62],
         gap="large"
     )
-
-    # ========================================================
-    # LEFT
-    # ========================================================
 
     with left_col:
 
@@ -924,10 +1069,6 @@ if st.session_state.page == "home":
 
             st.rerun()
 
-    # ========================================================
-    # RIGHT
-    # ========================================================
-
     with right_col:
 
         st.markdown(
@@ -945,44 +1086,31 @@ if st.session_state.page == "home":
                 "Construction sites involve high-risk activities "
                 "where proper Personal Protective Equipment (PPE) "
                 "is essential for worker safety. However, manually "
-                "monitoring whether every worker is wearing the "
-                "required PPE continuously is difficult, "
-                "time-consuming, and prone to human error."
+                "monitoring PPE continuously is difficult and "
+                "time-consuming."
             )
 
             st.write(
                 "GuardX-AI is an AI-powered Construction PPE "
-                "Detection System designed to automatically "
-                "identify hardhats, masks, and PPE violations "
-                "from construction-site images and videos. "
-                "Using YOLO-based object detection, the system "
-                "detects PPE equipment and identifies potential "
-                "safety violations."
+                "Detection System that uses YOLO object detection "
+                "to identify PPE violations from construction-site "
+                "images, camera captures, and videos."
             )
 
             st.write(
-                "The solution provides visual detection results "
-                "and safety alerts, helping improve safety "
-                "monitoring, reduce manual inspection effort, "
-                "and support faster identification of unsafe "
-                "working conditions."
+                "When a potential PPE violation is detected, "
+                "GuardX-AI provides an on-screen warning and "
+                "can send a safety alert through push notification "
+                "and Gmail."
             )
 
     st.write("")
     st.write("")
-
-    # ========================================================
-    # BOTTOM CARDS
-    # ========================================================
 
     team_col, gmail_col, guide_col = st.columns(
         [1.25, 1.25, 0.75],
         gap="large"
     )
-
-    # ========================================================
-    # TEAM
-    # ========================================================
 
     with team_col:
 
@@ -1004,10 +1132,6 @@ if st.session_state.page == "home":
                 unsafe_allow_html=True
             )
 
-    # ========================================================
-    # GMAIL
-    # ========================================================
-
     with gmail_col:
 
         with st.container(border=True):
@@ -1027,10 +1151,6 @@ if st.session_state.page == "home":
                 """,
                 unsafe_allow_html=True
             )
-
-    # ========================================================
-    # GUIDE
-    # ========================================================
 
     with guide_col:
 
@@ -1058,10 +1178,6 @@ if st.session_state.page == "home":
                 """,
                 unsafe_allow_html=True
             )
-
-    # ========================================================
-    # FOOTER
-    # ========================================================
 
     st.markdown(
         """
@@ -1159,7 +1275,7 @@ else:
     st.write("")
 
     # ========================================================
-    # PUSH NOTIFICATION CARD
+    # PUSH NOTIFICATION
     # ========================================================
 
     with st.container(border=True):
@@ -1205,8 +1321,7 @@ else:
                         elif token_result == "PERMISSION_DENIED":
 
                             st.warning(
-                                "🔕 Notification permission denied. "
-                                "Please allow notifications in your browser."
+                                "🔕 Notification permission denied."
                             )
 
                         elif token_result == "NOT_SUPPORTED":
@@ -1258,7 +1373,113 @@ else:
     st.write("")
 
     # ========================================================
-    # BACK BUTTON
+    # LOCATION
+    # ========================================================
+
+    with st.container(border=True):
+
+        st.markdown(
+            "### 📍 Live Location"
+        )
+
+        st.write(
+            "When a violation occurs, GuardX-AI can request "
+            "your browser's current location and include it "
+            "in the Gmail safety alert."
+        )
+
+        if st.button(
+            "📍 Allow Location Access",
+            key="location_button",
+            use_container_width=True
+        ):
+
+            location_result = get_live_location()
+
+            if location_result:
+
+                if isinstance(
+                    location_result,
+                    str
+                ):
+
+                    if location_result.startswith("{"):
+
+                        try:
+
+                            location_data = json.loads(
+                                location_result
+                            )
+
+                            st.session_state.location = (
+                                location_data
+                            )
+
+                            st.success(
+                                "📍 Live location access enabled."
+                            )
+
+                            st.write(
+                                f"Latitude: "
+                                f"{location_data['latitude']}"
+                            )
+
+                            st.write(
+                                f"Longitude: "
+                                f"{location_data['longitude']}"
+                            )
+
+                        except Exception:
+
+                            st.warning(
+                                "Location data could not be read."
+                            )
+
+                    elif location_result.startswith(
+                        "LOCATION_ERROR:"
+                    ):
+
+                        st.warning(
+                            "Location permission was denied "
+                            "or location could not be obtained."
+                        )
+
+                    elif location_result == (
+                        "LOCATION_NOT_SUPPORTED"
+                    ):
+
+                        st.warning(
+                            "This browser does not support location."
+                        )
+
+        if st.session_state.location:
+
+            latitude = st.session_state.location[
+                "latitude"
+            ]
+
+            longitude = st.session_state.location[
+                "longitude"
+            ]
+
+            maps_link = (
+                f"https://www.google.com/maps/"
+                f"search/?api=1&query="
+                f"{latitude},{longitude}"
+            )
+
+            st.success(
+                "📍 Location ready for safety alerts."
+            )
+
+            st.markdown(
+                f"[🗺️ Open current location in Google Maps]({maps_link})"
+            )
+
+    st.write("")
+
+    # ========================================================
+    # BACK
     # ========================================================
 
     if st.button(
@@ -1288,6 +1509,7 @@ else:
         key="input_type_selector"
     )
 
+
     # ========================================================
     # IMAGE
     # ========================================================
@@ -1298,10 +1520,6 @@ else:
             2,
             gap="large"
         )
-
-        # ----------------------------------------------------
-        # INPUT
-        # ----------------------------------------------------
 
         with input_col:
 
@@ -1381,10 +1599,6 @@ else:
                             "image"
                         )
 
-        # ----------------------------------------------------
-        # RESULT
-        # ----------------------------------------------------
-
         with result_col:
 
             st.subheader(
@@ -1426,10 +1640,6 @@ else:
 
                     display_safe_box()
 
-                # --------------------------------------------
-                # DETECTED OBJECTS
-                # --------------------------------------------
-
                 if detections:
 
                     st.write(
@@ -1438,13 +1648,19 @@ else:
 
                     for name, confidence in detections:
 
-                        # Don't show low-confidence
-                        # NO-Safety Vest as a violation.
+                        # Low confidence NO-Vest
+                        # UI lo kuda chupinchakudadhu.
+                        normalized = normalize_class_name(
+                            name
+                        )
+
                         if (
-                            "safety" in name.lower()
-                            and "vest" in name.lower()
-                            and "no" in name.lower()
-                            and confidence < NO_VEST_CONFIDENCE
+                            normalized in {
+                                "no-safety-vest",
+                                "no safety vest"
+                            }
+                            and
+                            confidence < NO_VEST_CONFIDENCE
                         ):
                             continue
 
@@ -1458,6 +1674,7 @@ else:
                     st.info(
                         "No objects detected."
                     )
+
 
     # ========================================================
     # CAMERA
@@ -1536,11 +1753,17 @@ else:
 
                     for name, confidence in detections:
 
+                        normalized = normalize_class_name(
+                            name
+                        )
+
                         if (
-                            "safety" in name.lower()
-                            and "vest" in name.lower()
-                            and "no" in name.lower()
-                            and confidence < NO_VEST_CONFIDENCE
+                            normalized in {
+                                "no-safety-vest",
+                                "no safety vest"
+                            }
+                            and
+                            confidence < NO_VEST_CONFIDENCE
                         ):
                             continue
 
@@ -1554,6 +1777,7 @@ else:
                     st.info(
                         "No objects detected."
                     )
+
 
     # ========================================================
     # VIDEO
@@ -1588,10 +1812,6 @@ else:
                     "Processing video... Please wait."
                 ):
 
-                    # ----------------------------------------
-                    # SAVE INPUT VIDEO
-                    # ----------------------------------------
-
                     input_file = tempfile.NamedTemporaryFile(
                         delete=False,
                         suffix=".mp4"
@@ -1602,10 +1822,6 @@ else:
                     )
 
                     input_file.close()
-
-                    # ----------------------------------------
-                    # OPEN VIDEO
-                    # ----------------------------------------
 
                     cap = cv2.VideoCapture(
                         input_file.name
@@ -1630,10 +1846,6 @@ else:
                         )
                     )
 
-                    # ----------------------------------------
-                    # OUTPUT VIDEO
-                    # ----------------------------------------
-
                     output_file = tempfile.NamedTemporaryFile(
                         delete=False,
                         suffix=".mp4"
@@ -1654,15 +1866,7 @@ else:
                         (width, height)
                     )
 
-                    # ----------------------------------------
-                    # TRACK VIOLATIONS
-                    # ----------------------------------------
-
                     video_violations = set()
-
-                    # ----------------------------------------
-                    # PROCESS FRAMES
-                    # ----------------------------------------
 
                     while True:
 
@@ -1705,40 +1909,25 @@ else:
 
                     writer.release()
 
-                    # ----------------------------------------
-                    # DELETE INPUT
-                    # ----------------------------------------
-
                     try:
+
                         os.remove(
                             input_file.name
                         )
+
                     except:
+
                         pass
 
                 st.success(
                     "✅ Video processing completed."
                 )
 
-                # --------------------------------------------
-                # SHOW VIDEO
-                # --------------------------------------------
-
                 st.video(
                     output_path
                 )
 
-                # --------------------------------------------
-                # VIDEO RESULT
-                # --------------------------------------------
-
                 if video_violations:
-
-                    violation_text = ", ".join(
-                        sorted(
-                            video_violations
-                        )
-                    )
 
                     video_violation_list = [
                         (
