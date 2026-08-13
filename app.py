@@ -50,11 +50,17 @@ def initialize_firebase():
 
         if not firebase_admin._apps:
 
-            firebase_config = dict(st.secrets["firebase"])
+            firebase_config = dict(
+                st.secrets["firebase"]
+            )
 
-            cred = credentials.Certificate(firebase_config)
+            cred = credentials.Certificate(
+                firebase_config
+            )
 
-            firebase_admin.initialize_app(cred)
+            firebase_admin.initialize_app(
+                cred
+            )
 
         return True
 
@@ -209,13 +215,6 @@ st.markdown(
         margin-bottom: 25px;
     }
 
-    .push-title {
-        color: #17345f !important;
-        font-size: 17px;
-        font-weight: 800;
-        margin-bottom: 5px;
-    }
-
     .safe-box {
         background: #ecfdf5;
         border: 1px solid #a7f3d0;
@@ -234,6 +233,15 @@ st.markdown(
         color: #991b1b !important;
         font-weight: 700;
         margin-top: 15px;
+    }
+
+    .model-box {
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        padding: 12px;
+        margin-top: 10px;
+        color: #334155 !important;
     }
 
     @media(max-width: 900px) {
@@ -274,6 +282,11 @@ def load_model():
         os.path.dirname(__file__),
         "best.pt"
     )
+
+    if not os.path.exists(model_path):
+        raise FileNotFoundError(
+            f"best.pt not found at: {model_path}"
+        )
 
     return YOLO(model_path)
 
@@ -399,6 +412,9 @@ def send_push_notification(token, title, body):
 
     try:
 
+        if not firebase_ready:
+            return False
+
         message = messaging.Message(
 
             notification=messaging.Notification(
@@ -426,25 +442,18 @@ def send_push_notification(token, title, body):
 
 def get_violations(detections):
 
+    # EXACT VIOLATION CLASSES FROM NEW MODEL
     violation_names = {
-
-        "no_helmet",
+        "no-hardhat",
+        "no-hardhat",
         "no_hardhat",
+
+        "no-mask",
         "no_mask",
-        "no_vest",
 
-        "without_helmet",
-        "without_mask",
-        "without_vest",
-
-        "no helmet",
-        "no hardhat",
-        "no mask",
-        "no vest",
-
-        "without helmet",
-        "without mask",
-        "without vest"
+        "no-safety vest",
+        "no-safety-vest",
+        "no_safety_vest"
     }
 
     violations = []
@@ -454,7 +463,7 @@ def get_violations(detections):
         normalized_name = (
             name.lower()
             .strip()
-            .replace(" ", "_")
+            .replace("_", "-")
         )
 
         if normalized_name in violation_names:
@@ -470,7 +479,10 @@ def get_violations(detections):
 # SEND VIOLATION ALERT
 # ============================================================
 
-def handle_violation_alert(violations, source="image"):
+def handle_violation_alert(
+    violations,
+    source="image"
+):
 
     if not violations:
         return
@@ -508,8 +520,43 @@ def handle_violation_alert(violations, source="image"):
         else:
 
             st.warning(
-                "⚠️ Violation detected, but push notification could not be sent."
+                "⚠️ Violation detected, "
+                "but push notification could not be sent."
             )
+
+
+# ============================================================
+# EXTRACT DETECTIONS
+# ============================================================
+
+def extract_detections(result):
+
+    detections = []
+
+    if result.boxes is not None:
+
+        for box in result.boxes:
+
+            class_id = int(
+                box.cls[0]
+            )
+
+            confidence = float(
+                box.conf[0]
+            )
+
+            name = result.names[
+                class_id
+            ]
+
+            detections.append(
+                (
+                    name,
+                    confidence
+                )
+            )
+
+    return detections
 
 
 # ============================================================
@@ -531,6 +578,7 @@ if st.session_state.page == "home":
         [0.38, 0.62],
         gap="large"
     )
+
 
     # ========================================================
     # LEFT
@@ -562,7 +610,7 @@ if st.session_state.page == "home":
 
         if st.button(
             "🔍  PREDICT",
-            key="predict",
+            key="home_predict_button",
             use_container_width=True
         ):
 
@@ -589,26 +637,29 @@ if st.session_state.page == "home":
         with st.container(border=True):
 
             st.write(
-                "Construction sites involve high-risk activities where "
-                "proper Personal Protective Equipment (PPE) is essential "
-                "for worker safety. However, manually monitoring whether "
-                "every worker is wearing the required PPE continuously is "
-                "difficult, time-consuming, and prone to human error."
+                "Construction sites involve high-risk activities "
+                "where proper Personal Protective Equipment (PPE) "
+                "is essential for worker safety. However, manually "
+                "monitoring whether every worker is wearing the "
+                "required PPE continuously is difficult, "
+                "time-consuming, and prone to human error."
             )
 
             st.write(
-                "GuardX AI is an AI-powered Construction PPE Detection "
-                "System designed to automatically identify safety equipment "
-                "such as hardhats, masks, and safety vests from "
-                "construction-site images and videos. Using YOLO-based "
-                "object detection, the system detects PPE items and "
-                "identifies potential safety violations."
+                "GuardX-AI is an AI-powered Construction PPE "
+                "Detection System designed to automatically "
+                "identify hardhats, masks, and PPE violations "
+                "from construction-site images and videos. "
+                "Using YOLO-based object detection, the system "
+                "detects PPE equipment and identifies potential "
+                "safety violations."
             )
 
             st.write(
-                "The solution provides visual detection results, helping "
-                "improve safety monitoring, reduce manual inspection "
-                "effort, and support faster identification of unsafe "
+                "The solution provides visual detection results "
+                "and safety alerts, helping improve safety "
+                "monitoring, reduce manual inspection effort, "
+                "and support faster identification of unsafe "
                 "working conditions."
             )
 
@@ -729,10 +780,6 @@ if st.session_state.page == "home":
 
 else:
 
-    # ========================================================
-    # TITLE
-    # ========================================================
-
     st.markdown(
         """
         <div class="detect-title">
@@ -753,8 +800,61 @@ else:
 
 
     # ========================================================
+    # LOAD YOLO
+    # ========================================================
+
+    try:
+
+        model = load_model()
+
+    except Exception as e:
+
+        st.error(
+            "❌ best.pt model load avvaledu."
+        )
+
+        st.info(
+            "Make sure best.pt is in the same folder as app.py."
+        )
+
+        st.caption(
+            str(e)
+        )
+
+        st.stop()
+
+
+    # ========================================================
+    # MODEL INFORMATION
+    # ========================================================
+
+    with st.container(border=True):
+
+        st.markdown(
+            """
+            <div class="card-heading">
+                🤖 GuardX-AI Detection Model
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
+
+        st.write(
+            "The current model detects 5 PPE-related classes:"
+        )
+
+        st.write(
+            "🪖 Hardhat  |  🚨 NO-Hardhat  |  "
+            "😷 Mask  |  🚨 NO-Mask  |  🚨 NO-Safety Vest"
+        )
+
+
+    st.write("")
+
+
+    # ========================================================
     # PUSH NOTIFICATION CARD
-    # ONLY ONE CARD + ONE BUTTON
+    # ONLY ONE BUTTON WITH UNIQUE KEY
     # ========================================================
 
     with st.container(border=True):
@@ -772,7 +872,7 @@ else:
 
             if st.button(
                 "🔔 Enable Push Notifications",
-                key="guardx_enable_push",
+                key="prediction_push_enable",
                 use_container_width=True
             ):
 
@@ -780,9 +880,14 @@ else:
 
                 if token_result:
 
-                    if isinstance(token_result, str):
+                    if isinstance(
+                        token_result,
+                        str
+                    ):
 
-                        if token_result.startswith("ERROR:"):
+                        if token_result.startswith(
+                            "ERROR:"
+                        ):
 
                             st.error(
                                 "❌ Push notification setup failed."
@@ -819,9 +924,13 @@ else:
 
                         else:
 
-                            st.session_state.fcm_token = token_result
+                            st.session_state.fcm_token = (
+                                token_result
+                            )
 
-                            st.session_state.push_enabled = True
+                            st.session_state.push_enabled = (
+                                True
+                            )
 
                             st.success(
                                 "🔔 Push notifications enabled successfully!"
@@ -851,7 +960,7 @@ else:
 
     if st.button(
         "← Back to Home",
-        key="back",
+        key="prediction_back_button",
         use_container_width=True
     ):
 
@@ -861,31 +970,6 @@ else:
 
 
     st.write("")
-
-
-    # ========================================================
-    # LOAD YOLO
-    # ========================================================
-
-    try:
-
-        model = load_model()
-
-    except Exception as e:
-
-        st.error(
-            "❌ best.pt model load avvaledu."
-        )
-
-        st.info(
-            "Make sure best.pt is in the same folder as app.py."
-        )
-
-        st.caption(
-            str(e)
-        )
-
-        st.stop()
 
 
     # ========================================================
@@ -899,7 +983,8 @@ else:
             "📷 Camera",
             "🎥 Video"
         ],
-        horizontal=True
+        horizontal=True,
+        key="input_type_selector"
     )
 
 
@@ -921,7 +1006,9 @@ else:
 
         with input_col:
 
-            st.subheader("Upload Image")
+            st.subheader(
+                "Upload Image"
+            )
 
             uploaded_image = st.file_uploader(
                 "Choose a construction image",
@@ -950,7 +1037,7 @@ else:
 
                 if st.button(
                     "🔍 Detect PPE",
-                    key="image_detect",
+                    key="image_detect_button",
                     use_container_width=True
                 ):
 
@@ -974,43 +1061,27 @@ else:
                     )
 
 
-                    detections = []
-
-
-                    if result.boxes is not None:
-
-                        for box in result.boxes:
-
-                            class_id = int(
-                                box.cls[0]
-                            )
-
-                            confidence = float(
-                                box.conf[0]
-                            )
-
-                            name = result.names[
-                                class_id
-                            ]
-
-                            detections.append(
-                                (
-                                    name,
-                                    confidence
-                                )
-                            )
-
-
-                    st.session_state.result_image = annotated
-
-                    st.session_state.detections = detections
+                    detections = extract_detections(
+                        result
+                    )
 
 
                     violations = get_violations(
                         detections
                     )
 
-                    st.session_state.image_violations = violations
+
+                    st.session_state.result_image = (
+                        annotated
+                    )
+
+                    st.session_state.detections = (
+                        detections
+                    )
+
+                    st.session_state.image_violations = (
+                        violations
+                    )
 
 
                     if violations:
@@ -1027,7 +1098,9 @@ else:
 
         with result_col:
 
-            st.subheader("Detection Result")
+            st.subheader(
+                "Detection Result"
+            )
 
 
             if "result_image" not in st.session_state:
@@ -1046,11 +1119,15 @@ else:
                 )
 
 
-                detections = st.session_state.detections
+                detections = (
+                    st.session_state.detections
+                )
 
-                violations = st.session_state.get(
-                    "image_violations",
-                    []
+                violations = (
+                    st.session_state.get(
+                        "image_violations",
+                        []
+                    )
                 )
 
 
@@ -1127,7 +1204,8 @@ else:
     elif input_type == "📷 Camera":
 
         camera_image = st.camera_input(
-            "Take a photo"
+            "Take a photo",
+            key="camera_input"
         )
 
 
@@ -1140,7 +1218,7 @@ else:
 
             if st.button(
                 "🔍 Detect PPE",
-                key="camera_detect",
+                key="camera_detect_button",
                 use_container_width=True
             ):
 
@@ -1171,31 +1249,9 @@ else:
                 )
 
 
-                detections = []
-
-
-                if result.boxes is not None:
-
-                    for box in result.boxes:
-
-                        class_id = int(
-                            box.cls[0]
-                        )
-
-                        confidence = float(
-                            box.conf[0]
-                        )
-
-                        name = result.names[
-                            class_id
-                        ]
-
-                        detections.append(
-                            (
-                                name,
-                                confidence
-                            )
-                        )
+                detections = extract_detections(
+                    result
+                )
 
 
                 violations = get_violations(
@@ -1301,7 +1357,7 @@ else:
 
             if st.button(
                 "🎥 Detect PPE in Video",
-                key="video_detect",
+                key="video_detect_button",
                 use_container_width=True
             ):
 
@@ -1403,45 +1459,29 @@ else:
                         )
 
 
-                        if result.boxes is not None:
+                        # ------------------------------------
+                        # GET VIOLATIONS FROM CURRENT FRAME
+                        # ------------------------------------
 
-                            for box in result.boxes:
-
-                                class_id = int(
-                                    box.cls[0]
-                                )
-
-
-                                name = result.names[
-                                    class_id
-                                ]
+                        frame_detections = (
+                            extract_detections(
+                                result
+                            )
+                        )
 
 
-                                normalized_name = (
-                                    name.lower()
-                                    .strip()
-                                    .replace(" ", "_")
-                                )
+                        frame_violations = (
+                            get_violations(
+                                frame_detections
+                            )
+                        )
 
 
-                                violation_names = {
+                        for name, confidence in frame_violations:
 
-                                    "no_helmet",
-                                    "no_hardhat",
-                                    "no_mask",
-                                    "no_vest",
-
-                                    "without_helmet",
-                                    "without_mask",
-                                    "without_vest"
-                                }
-
-
-                                if normalized_name in violation_names:
-
-                                    video_violations.add(
-                                        name
-                                    )
+                            video_violations.add(
+                                name
+                            )
 
 
                     cap.release()
