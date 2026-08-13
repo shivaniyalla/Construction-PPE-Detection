@@ -10,26 +10,12 @@ import smtplib
 from email.message import EmailMessage
 from datetime import datetime
 
-# ============================================================
-# OPTIONAL FIREBASE
-# ============================================================
+# Firebase
+import firebase_admin
+from firebase_admin import credentials, messaging
 
-try:
-    import firebase_admin
-    from firebase_admin import credentials, messaging
-    FIREBASE_AVAILABLE = True
-except Exception:
-    FIREBASE_AVAILABLE = False
-
-# ============================================================
-# BROWSER JS
-# ============================================================
-
-try:
-    from streamlit_js_eval import streamlit_js_eval
-    JS_AVAILABLE = True
-except Exception:
-    JS_AVAILABLE = False
+# Browser JS
+from streamlit_js_eval import streamlit_js_eval
 
 
 # ============================================================
@@ -56,15 +42,10 @@ defaults = {
     "location": None,
     "email_error": None,
     "push_error": None,
-    "firebase_error": None,
     "result_image": None,
     "detections": [],
     "image_violations": [],
-    "camera_result": None,
-    "camera_detections": [],
-    "camera_violations": [],
-    "video_result": None,
-    "video_violations": []
+    "video_output": None
 }
 
 for key, value in defaults.items():
@@ -78,19 +59,15 @@ for key, value in defaults.items():
 
 GENERAL_CONFIDENCE = 0.30
 
-# NO-Safety Vest is more sensitive in your dataset,
-# so we use a higher confidence threshold.
+# NO-Safety Vest false detections reduce cheyyadaniki
 NO_VEST_CONFIDENCE = 0.75
 
 
 # ============================================================
-# FIREBASE ADMIN INITIALIZATION
+# FIREBASE ADMIN
 # ============================================================
 
 def initialize_firebase():
-
-    if not FIREBASE_AVAILABLE:
-        return False
 
     try:
 
@@ -98,12 +75,16 @@ def initialize_firebase():
             return True
 
         if "firebase" not in st.secrets:
-            st.session_state.firebase_error = (
-                "Firebase credentials are missing in Streamlit secrets."
-            )
             return False
 
         firebase_config = dict(st.secrets["firebase"])
+
+        # Streamlit secrets lo \n proper ga convert
+        if "private_key" in firebase_config:
+            firebase_config["private_key"] = (
+                firebase_config["private_key"]
+                .replace("\\n", "\n")
+            )
 
         cred = credentials.Certificate(firebase_config)
 
@@ -146,7 +127,7 @@ VAPID_KEY = (
 
 
 # ============================================================
-# GLOBAL DARK UI
+# GLOBAL CSS
 # ============================================================
 
 st.markdown(
@@ -154,35 +135,34 @@ st.markdown(
 <style>
 
 /* =========================================================
-   GLOBAL
+   MAIN APP
 ========================================================= */
 
 .stApp {
     background:
         radial-gradient(
             circle at 10% 10%,
-            rgba(37, 99, 235, 0.20),
+            rgba(124,58,237,0.20),
+            transparent 30%
+        ),
+        radial-gradient(
+            circle at 90% 15%,
+            rgba(6,182,212,0.15),
             transparent 28%
         ),
         radial-gradient(
-            circle at 90% 20%,
-            rgba(124, 58, 237, 0.18),
-            transparent 30%
-        ),
-        radial-gradient(
             circle at 50% 100%,
-            rgba(6, 182, 212, 0.10),
-            transparent 30%
+            rgba(236,72,153,0.10),
+            transparent 35%
         ),
-        #070b16 !important;
-
-    color: #f8fafc !important;
+        #090b16;
+    color: #f8fafc;
 }
 
 .block-container {
-    max-width: 1450px;
-    padding-top: 35px;
-    padding-bottom: 40px;
+    max-width: 1400px;
+    padding-top: 30px;
+    padding-bottom: 50px;
     padding-left: 5%;
     padding-right: 5%;
 }
@@ -201,62 +181,83 @@ footer {
 
 
 /* =========================================================
-   ALL TEXT
+   HERO
 ========================================================= */
 
-.stMarkdown,
-.stMarkdown p,
-.stMarkdown li,
-.stText,
-label,
-p,
-span {
-    color: #e5e7eb;
+.hero {
+    text-align: center;
+    padding: 18px 20px 28px 20px;
+}
+
+.hero-badge {
+    display: inline-block;
+    padding: 7px 15px;
+    border-radius: 30px;
+    background: rgba(139,92,246,0.14);
+    border: 1px solid rgba(167,139,250,0.35);
+    color: #c4b5fd;
+    font-size: 13px;
+    font-weight: 700;
+    margin-bottom: 15px;
+}
+
+.hero-title {
+    font-size: 44px;
+    font-weight: 900;
+    letter-spacing: -1.5px;
+    background: linear-gradient(
+        90deg,
+        #ffffff,
+        #c4b5fd,
+        #67e8f9,
+        #f9a8d4
+    );
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.hero-subtitle {
+    color: #94a3b8;
+    font-size: 16px;
+    margin-top: 10px;
 }
 
 
 /* =========================================================
-   MAIN TITLE
+   GLASS CARDS
 ========================================================= */
 
-.main-title {
-    text-align: center;
-    font-size: 38px !important;
-    font-weight: 900 !important;
-
+.glass-card {
     background:
         linear-gradient(
-            90deg,
-            #60a5fa,
-            #a78bfa,
-            #22d3ee,
-            #60a5fa
+            145deg,
+            rgba(30,41,59,0.82),
+            rgba(15,23,42,0.72)
         );
-
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-
-    background-size: 300% auto;
-
-    animation: gradientMove 5s linear infinite;
-
-    margin-bottom: 35px;
+    border: 1px solid rgba(148,163,184,0.16);
+    border-radius: 22px;
+    padding: 25px;
+    box-shadow:
+        0 18px 50px rgba(0,0,0,0.25),
+        inset 0 1px 0 rgba(255,255,255,0.04);
+    backdrop-filter: blur(14px);
 }
 
-@keyframes gradientMove {
+.glass-card:hover {
+    border-color: rgba(139,92,246,0.35);
+}
 
-    0% {
-        background-position: 0% center;
-    }
+.card-title {
+    color: #f8fafc;
+    font-size: 18px;
+    font-weight: 800;
+    margin-bottom: 12px;
+}
 
-    50% {
-        background-position: 100% center;
-    }
-
-    100% {
-        background-position: 0% center;
-    }
-
+.card-text {
+    color: #aab5c7;
+    font-size: 14px;
+    line-height: 1.8;
 }
 
 
@@ -264,77 +265,86 @@ span {
    HOME LEFT
 ========================================================= */
 
-.aicw-text {
-    color: #93c5fd !important;
-    font-size: 28px !important;
-    font-weight: 900 !important;
-    line-height: 1.5;
+.aicw-card {
+    min-height: 320px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
 }
 
-.capstone-text {
-    color: #c4b5fd !important;
-    font-size: 23px !important;
-    font-weight: 800 !important;
-    margin-top: 40px;
-}
-
-
-/* =========================================================
-   DESCRIPTION
-========================================================= */
-
-.description-title {
-    color: #67e8f9 !important;
-    font-size: 25px !important;
-    font-weight: 900 !important;
+.aicw-icon {
+    font-size: 58px;
     margin-bottom: 15px;
 }
 
+.aicw-title {
+    font-size: 30px;
+    font-weight: 900;
+    color: #ffffff;
+}
 
-/* =========================================================
-   STREAMLIT CONTAINERS / CARDS
-========================================================= */
+.aicw-subtitle {
+    color: #a78bfa;
+    font-size: 18px;
+    font-weight: 700;
+    margin-top: 8px;
+}
 
-div[data-testid="stVerticalBlockBorderWrapper"] {
-
-    background:
-        linear-gradient(
-            145deg,
-            rgba(20, 29, 52, 0.94),
-            rgba(11, 17, 32, 0.94)
-        ) !important;
-
-    border: 1px solid rgba(96, 165, 250, 0.20) !important;
-
-    border-radius: 20px !important;
-
-    box-shadow:
-        0 10px 40px rgba(0, 0, 0, 0.35),
-        inset 0 1px 0 rgba(255,255,255,0.04);
-
-    padding: 16px !important;
-
-    backdrop-filter: blur(18px);
-
+.capstone {
+    margin-top: 22px;
+    display: inline-block;
+    padding: 9px 15px;
+    border-radius: 30px;
+    background: rgba(34,211,238,0.10);
+    border: 1px solid rgba(34,211,238,0.25);
+    color: #67e8f9;
+    font-weight: 700;
 }
 
 
 /* =========================================================
-   CARD TEXT
+   TEAM CARDS
 ========================================================= */
 
-.card-heading {
-    color: #93c5fd !important;
-    font-size: 16px !important;
-    font-weight: 900 !important;
-    letter-spacing: 0.5px;
-    margin-bottom: 15px;
+.member-card {
+    background: linear-gradient(
+        145deg,
+        rgba(30,41,59,0.75),
+        rgba(15,23,42,0.65)
+    );
+    border: 1px solid rgba(148,163,184,0.13);
+    border-radius: 20px;
+    padding: 18px;
+    min-height: 180px;
 }
 
-.card-text {
-    color: #cbd5e1 !important;
-    font-size: 14px !important;
-    line-height: 2 !important;
+.avatar {
+    width: 58px;
+    height: 58px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 29px;
+    background: linear-gradient(
+        135deg,
+        #7c3aed,
+        #06b6d4
+    );
+    box-shadow: 0 8px 25px rgba(124,58,237,0.30);
+    margin-bottom: 12px;
+}
+
+.member-name {
+    color: #f8fafc;
+    font-weight: 800;
+    font-size: 15px;
+}
+
+.member-role {
+    color: #94a3b8;
+    font-size: 12px;
+    margin-top: 4px;
 }
 
 
@@ -343,52 +353,33 @@ div[data-testid="stVerticalBlockBorderWrapper"] {
 ========================================================= */
 
 div.stButton > button {
-
     width: 100%;
-
     min-height: 48px;
+    border-radius: 13px !important;
 
-    border-radius: 12px !important;
+    background: linear-gradient(
+        135deg,
+        #7c3aed,
+        #2563eb
+    ) !important;
 
-    border: 1px solid rgba(96,165,250,0.30) !important;
-
-    background:
-        linear-gradient(
-            135deg,
-            rgba(37,99,235,0.22),
-            rgba(124,58,237,0.22)
-        ) !important;
-
-    color: #f8fafc !important;
+    color: white !important;
+    border: 1px solid rgba(167,139,250,0.4) !important;
 
     font-size: 14px !important;
-
     font-weight: 800 !important;
 
-    transition:
-        all 0.25s ease !important;
-
     box-shadow:
-        0 5px 20px rgba(37,99,235,0.10);
+        0 8px 25px rgba(124,58,237,0.25);
 
+    transition: 0.25s ease;
 }
 
 div.stButton > button:hover {
-
     transform: translateY(-2px);
-
-    border-color: #60a5fa !important;
-
-    background:
-        linear-gradient(
-            135deg,
-            rgba(37,99,235,0.40),
-            rgba(124,58,237,0.40)
-        ) !important;
-
     box-shadow:
-        0 8px 30px rgba(59,130,246,0.25);
-
+        0 12px 35px rgba(124,58,237,0.40);
+    border-color: #a78bfa !important;
 }
 
 
@@ -396,12 +387,16 @@ div.stButton > button:hover {
    RADIO
 ========================================================= */
 
+div[data-testid="stRadio"] {
+    background: rgba(15,23,42,0.65);
+    border: 1px solid rgba(148,163,184,0.14);
+    padding: 12px 18px;
+    border-radius: 16px;
+}
+
 div[data-testid="stRadio"] label {
-
     color: #cbd5e1 !important;
-
     font-weight: 700 !important;
-
 }
 
 
@@ -410,32 +405,45 @@ div[data-testid="stRadio"] label {
 ========================================================= */
 
 div[data-testid="stFileUploader"] {
-
-    background:
-        rgba(15,23,42,0.75) !important;
-
-    border:
-        1px solid rgba(96,165,250,0.18) !important;
-
-    border-radius: 15px !important;
-
-    padding: 8px;
-
-}
-
-div[data-testid="stFileUploader"] section {
-
-    background:
-        rgba(15,23,42,0.50) !important;
-
-    border-radius: 12px !important;
-
+    background: rgba(15,23,42,0.65);
+    border: 1px dashed rgba(139,92,246,0.45);
+    border-radius: 16px;
+    padding: 10px;
 }
 
 
 /* =========================================================
-   INPUT LABELS
+   STREAMLIT CONTAINER
 ========================================================= */
+
+div[data-testid="stVerticalBlockBorderWrapper"] {
+    background:
+        linear-gradient(
+            145deg,
+            rgba(30,41,59,0.80),
+            rgba(15,23,42,0.72)
+        ) !important;
+
+    border: 1px solid rgba(148,163,184,0.14) !important;
+
+    border-radius: 20px !important;
+
+    box-shadow:
+        0 15px 40px rgba(0,0,0,0.22);
+
+    padding: 10px !important;
+}
+
+
+/* =========================================================
+   INPUT TEXT
+========================================================= */
+
+.stMarkdown,
+.stMarkdown p,
+.stMarkdown li {
+    color: #cbd5e1;
+}
 
 label {
     color: #cbd5e1 !important;
@@ -443,232 +451,83 @@ label {
 
 
 /* =========================================================
-   TITLES
+   DETECTION TITLE
 ========================================================= */
 
 .detect-title {
-
     text-align: center;
-
     font-size: 40px;
-
     font-weight: 900;
 
-    background:
-        linear-gradient(
-            90deg,
-            #60a5fa,
-            #a78bfa,
-            #22d3ee
-        );
+    background: linear-gradient(
+        90deg,
+        #c4b5fd,
+        #67e8f9,
+        #f9a8d4
+    );
 
     -webkit-background-clip: text;
-
     -webkit-text-fill-color: transparent;
-
-    margin-bottom: 4px;
-
 }
 
 .detect-subtitle {
-
-    color: #94a3b8 !important;
-
     text-align: center;
-
+    color: #94a3b8;
     font-size: 15px;
-
-    margin-bottom: 30px;
-
+    margin-bottom: 28px;
 }
 
 
 /* =========================================================
-   SAFE BOX
+   SAFE
 ========================================================= */
 
 .safe-box {
-
-    background:
-        linear-gradient(
-            135deg,
-            rgba(16,185,129,0.18),
-            rgba(6,78,59,0.22)
-        );
-
-    border:
-        1px solid rgba(52,211,153,0.45);
-
+    margin-top: 16px;
+    padding: 18px;
     border-radius: 16px;
 
-    padding: 18px;
+    background: rgba(16,185,129,0.10);
+    border: 1px solid rgba(52,211,153,0.35);
 
     color: #6ee7b7 !important;
-
     font-weight: 800;
-
-    margin-top: 18px;
-
-    box-shadow:
-        0 8px 30px rgba(16,185,129,0.10);
-
 }
 
 
 /* =========================================================
-   VIOLATION BOX
+   VIOLATION
 ========================================================= */
 
 .violation-box {
+    margin-top: 16px;
+    padding: 20px;
+    border-radius: 17px;
 
     background:
         linear-gradient(
             135deg,
-            rgba(239,68,68,0.18),
-            rgba(127,29,29,0.22)
+            rgba(239,68,68,0.14),
+            rgba(127,29,29,0.12)
         );
 
-    border:
-        1px solid rgba(248,113,113,0.55);
-
-    border-radius: 16px;
-
-    padding: 20px;
-
-    margin-top: 18px;
+    border: 1px solid rgba(248,113,113,0.42);
 
     box-shadow:
-        0 8px 35px rgba(239,68,68,0.13);
-
-    animation: alertPulse 2s ease-in-out infinite;
-
-}
-
-@keyframes alertPulse {
-
-    0% {
-        box-shadow:
-            0 8px 35px rgba(239,68,68,0.10);
-    }
-
-    50% {
-        box-shadow:
-            0 8px 45px rgba(239,68,68,0.28);
-    }
-
-    100% {
-        box-shadow:
-            0 8px 35px rgba(239,68,68,0.10);
-    }
-
+        0 10px 30px rgba(239,68,68,0.12);
 }
 
 .violation-title {
-
-    font-size: 19px;
-
-    font-weight: 900;
-
     color: #fca5a5 !important;
-
-    margin-bottom: 12px;
-
+    font-size: 18px;
+    font-weight: 900;
 }
 
 .violation-text {
-
-    font-size: 15px;
-
-    font-weight: 700;
-
     color: #fecaca !important;
-
-}
-
-
-/* =========================================================
-   DETECTION OBJECT CARD
-========================================================= */
-
-.object-card {
-
-    background:
-        linear-gradient(
-            135deg,
-            rgba(30,41,59,0.75),
-            rgba(15,23,42,0.75)
-        );
-
-    border:
-        1px solid rgba(148,163,184,0.14);
-
-    border-radius: 13px;
-
-    padding: 12px 15px;
-
-    margin: 7px 0;
-
-    display: flex;
-
-    justify-content: space-between;
-
-    align-items: center;
-
-}
-
-.object-name {
-
-    color: #e2e8f0 !important;
-
-    font-weight: 800;
-
-}
-
-.object-confidence {
-
-    color: #67e8f9 !important;
-
-    font-weight: 900;
-
-}
-
-
-/* =========================================================
-   MODEL CARD
-========================================================= */
-
-.model-header {
-
-    color: #a78bfa !important;
-
-    font-size: 17px;
-
-    font-weight: 900;
-
-}
-
-.class-pill {
-
-    display: inline-block;
-
-    background:
-        rgba(96,165,250,0.12);
-
-    border:
-        1px solid rgba(96,165,250,0.20);
-
-    border-radius: 999px;
-
-    padding: 7px 12px;
-
-    margin: 4px;
-
-    color: #bfdbfe !important;
-
-    font-size: 13px;
-
+    font-size: 14px;
     font-weight: 700;
-
+    margin-top: 8px;
 }
 
 
@@ -676,24 +535,12 @@ label {
    ALERT STATUS
 ========================================================= */
 
-.alert-status {
-
-    border-radius: 12px;
-
-    padding: 12px 15px;
-
-    margin-top: 10px;
-
-    background:
-        rgba(59,130,246,0.10);
-
-    border:
-        1px solid rgba(59,130,246,0.20);
-
-    color: #bfdbfe !important;
-
-    font-weight: 700;
-
+.alert-card {
+    padding: 16px;
+    border-radius: 15px;
+    background: rgba(59,130,246,0.08);
+    border: 1px solid rgba(96,165,250,0.22);
+    color: #bfdbfe;
 }
 
 
@@ -701,38 +548,11 @@ label {
    FOOTER
 ========================================================= */
 
-.footer-text {
-
-    color: #64748b !important;
-
+.footer {
     text-align: center;
-
+    color: #64748b;
     font-size: 13px;
-
-    margin-top: 35px;
-
-}
-
-
-/* =========================================================
-   STREAMLIT ALERT TEXT
-========================================================= */
-
-div[data-testid="stAlert"] {
-
-    border-radius: 12px !important;
-
-}
-
-
-/* =========================================================
-   IMAGE
-========================================================= */
-
-img {
-
-    border-radius: 14px !important;
-
+    padding: 35px 0 10px 0;
 }
 
 
@@ -742,32 +562,18 @@ img {
 
 @media(max-width: 900px) {
 
-    .block-container {
-
-        padding-left: 4%;
-
-        padding-right: 4%;
-
-    }
-
-    .main-title {
-
-        font-size: 27px !important;
-
+    .hero-title {
+        font-size: 30px;
     }
 
     .detect-title {
-
         font-size: 30px;
-
     }
 
-    .aicw-text {
-
-        font-size: 23px !important;
-
+    .block-container {
+        padding-left: 4%;
+        padding-right: 4%;
     }
-
 }
 
 </style>
@@ -784,27 +590,223 @@ img {
 def load_model():
 
     model_path = os.path.join(
-        os.path.dirname(os.path.abspath(__file__)),
+        os.path.dirname(__file__),
         "best.pt"
     )
 
     if not os.path.exists(model_path):
 
         raise FileNotFoundError(
-            f"best.pt not found at: {model_path}"
+            f"best.pt not found: {model_path}"
         )
 
     return YOLO(model_path)
 
 
 # ============================================================
-# GET LIVE LOCATION
+# NORMALIZE CLASS NAME
+# ============================================================
+
+def normalize_class_name(name):
+
+    name = str(name).lower().strip()
+
+    name = name.replace("_", "-")
+
+    name = " ".join(name.split())
+
+    return name
+
+
+# ============================================================
+# IS VIOLATION
+# ============================================================
+
+def is_violation(name, confidence):
+
+    normalized = normalize_class_name(name)
+
+    if normalized in {
+        "no-hardhat",
+        "no hardhat"
+    }:
+        return True
+
+    if normalized in {
+        "no-mask",
+        "no mask"
+    }:
+        return True
+
+    if normalized in {
+        "no-safety-vest",
+        "no safety vest"
+    }:
+        return confidence >= NO_VEST_CONFIDENCE
+
+    return False
+
+
+# ============================================================
+# EXTRACT DETECTIONS
+# ============================================================
+
+def extract_detections(result):
+
+    detections = []
+
+    if result.boxes is None:
+        return detections
+
+    for box in result.boxes:
+
+        class_id = int(box.cls[0])
+
+        confidence = float(box.conf[0])
+
+        name = str(result.names[class_id])
+
+        x1, y1, x2, y2 = map(
+            int,
+            box.xyxy[0].tolist()
+        )
+
+        detections.append({
+            "name": name,
+            "confidence": confidence,
+            "box": (x1, y1, x2, y2),
+            "violation": is_violation(
+                name,
+                confidence
+            )
+        })
+
+    return detections
+
+
+# ============================================================
+# GET VIOLATIONS
+# ============================================================
+
+def get_violations(detections):
+
+    violations = []
+
+    for detection in detections:
+
+        if detection["violation"]:
+
+            violations.append(
+                (
+                    detection["name"],
+                    detection["confidence"]
+                )
+            )
+
+    return violations
+
+
+# ============================================================
+# CUSTOM BOUNDING BOX DRAWING
+# ============================================================
+
+def draw_custom_boxes(frame, detections):
+
+    output = frame.copy()
+
+    for detection in detections:
+
+        name = detection["name"]
+
+        confidence = detection["confidence"]
+
+        x1, y1, x2, y2 = detection["box"]
+
+        violation = detection["violation"]
+
+        # ----------------------------------------------------
+        # VIOLATION = RED
+        # NORMAL OBJECT = CYAN/GREEN
+        # ----------------------------------------------------
+
+        if violation:
+
+            color = (40, 40, 255)
+
+            label_color = (40, 40, 255)
+
+        else:
+
+            color = (0, 220, 190)
+
+            label_color = (0, 220, 190)
+
+        # ----------------------------------------------------
+        # BOX
+        # ----------------------------------------------------
+
+        cv2.rectangle(
+            output,
+            (x1, y1),
+            (x2, y2),
+            color,
+            3
+        )
+
+        # ----------------------------------------------------
+        # LABEL
+        # ----------------------------------------------------
+
+        label = (
+            f"{name} "
+            f"{confidence * 100:.1f}%"
+        )
+
+        font = cv2.FONT_HERSHEY_SIMPLEX
+
+        font_scale = 0.55
+
+        thickness = 2
+
+        (tw, th), _ = cv2.getTextSize(
+            label,
+            font,
+            font_scale,
+            thickness
+        )
+
+        label_y = max(
+            y1,
+            th + 10
+        )
+
+        cv2.rectangle(
+            output,
+            (x1, label_y - th - 10),
+            (x1 + tw + 10, label_y),
+            label_color,
+            -1
+        )
+
+        cv2.putText(
+            output,
+            label,
+            (x1 + 5, label_y - 5),
+            font,
+            font_scale,
+            (255, 255, 255),
+            thickness,
+            cv2.LINE_AA
+        )
+
+    return output
+
+
+# ============================================================
+# LIVE LOCATION
 # ============================================================
 
 def get_live_location():
-
-    if not JS_AVAILABLE:
-        return None
 
     js_code = """
     (async () => {
@@ -845,26 +847,18 @@ def get_live_location():
     })();
     """
 
-    try:
-
-        return streamlit_js_eval(
-            js_expressions=js_code,
-            want_output=True,
-            key="location_" + str(datetime.now().timestamp())
-        )
-
-    except Exception:
-        return None
+    return streamlit_js_eval(
+        js_expressions=js_code,
+        want_output=True,
+        key="location_request"
+    )
 
 
 # ============================================================
-# GET FCM TOKEN
+# FCM TOKEN
 # ============================================================
 
 def get_fcm_token():
-
-    if not JS_AVAILABLE:
-        return "ERROR: streamlit-js-eval is not installed."
 
     js_code = f"""
     (async () => {{
@@ -891,12 +885,12 @@ def get_fcm_token():
                     "/firebase-messaging-sw.js"
                 );
 
-            const firebaseAppModule =
+            const appModule =
                 await import(
                     "https://www.gstatic.com/firebasejs/10.13.2/firebase-app.js"
                 );
 
-            const firebaseMessagingModule =
+            const messagingModule =
                 await import(
                     "https://www.gstatic.com/firebasejs/10.13.2/firebase-messaging.js"
                 );
@@ -905,15 +899,15 @@ def get_fcm_token():
                 {json.dumps(firebase_web_config)};
 
             const app =
-                firebaseAppModule.initializeApp(
+                appModule.initializeApp(
                     firebaseConfig
                 );
 
             const messaging =
-                firebaseMessagingModule.getMessaging(app);
+                messagingModule.getMessaging(app);
 
             const token =
-                await firebaseMessagingModule.getToken(
+                await messagingModule.getToken(
                     messaging,
                     {{
                         vapidKey: "{VAPID_KEY}",
@@ -936,40 +930,29 @@ def get_fcm_token():
     }})();
     """
 
-    try:
-
-        return streamlit_js_eval(
-            js_expressions=js_code,
-            want_output=True,
-            key="fcm_token_generator"
-        )
-
-    except Exception as e:
-
-        return "ERROR:" + str(e)
+    return streamlit_js_eval(
+        js_expressions=js_code,
+        want_output=True,
+        key="fcm_token_generator"
+    )
 
 
 # ============================================================
-# SEND PUSH NOTIFICATION
+# PUSH NOTIFICATION
 # ============================================================
 
 def send_push_notification(token, title, body):
 
-    if not token:
-        return False
-
-    if not firebase_ready:
-        return False
-
     try:
 
-        message = messaging.Message(
+        if not firebase_ready:
+            return False
 
+        message = messaging.Message(
             notification=messaging.Notification(
                 title=title,
                 body=body
             ),
-
             token=token
         )
 
@@ -985,7 +968,7 @@ def send_push_notification(token, title, body):
 
 
 # ============================================================
-# SEND GMAIL ALERT
+# EMAIL
 # ============================================================
 
 def send_email_alert(
@@ -1000,27 +983,31 @@ def send_email_alert(
         # CHECK EMAIL SECRETS
         # ----------------------------------------------------
 
-        required_keys = [
+        required = [
             "EMAIL_SENDER",
             "EMAIL_PASSWORD",
             "EMAIL_RECEIVER"
         ]
 
-        missing_keys = [
+        missing = [
             key
-            for key in required_keys
+            for key in required
             if key not in st.secrets
         ]
 
-        if missing_keys:
+        if missing:
 
-            raise Exception(
+            st.session_state.email_error = (
                 "Missing Streamlit secrets: "
-                + ", ".join(missing_keys)
+                + ", ".join(missing)
             )
 
+            return False
+
         sender = st.secrets["EMAIL_SENDER"]
+
         password = st.secrets["EMAIL_PASSWORD"]
+
         receiver = st.secrets["EMAIL_RECEIVER"]
 
         # ----------------------------------------------------
@@ -1038,13 +1025,13 @@ def send_email_alert(
         )
 
         # ----------------------------------------------------
-        # VIOLATIONS
+        # VIOLATION
         # ----------------------------------------------------
 
         violation_text = ", ".join(
             sorted(
                 set(
-                    str(name)
+                    name
                     for name, confidence
                     in violations
                 )
@@ -1057,17 +1044,13 @@ def send_email_alert(
 
         if location_data:
 
-            latitude = location_data.get(
-                "latitude"
-            )
+            latitude = location_data["latitude"]
 
-            longitude = location_data.get(
-                "longitude"
-            )
+            longitude = location_data["longitude"]
 
             maps_link = (
                 "https://www.google.com/maps/"
-                "?api=1&query="
+                "search/?api=1&query="
                 f"{latitude},{longitude}"
             )
 
@@ -1079,14 +1062,8 @@ def send_email_alert(
 
         else:
 
-            fixed_location = st.secrets.get(
-                "LOCATION",
-                "Location unavailable"
-            )
-
             location_text = (
-                f"Location: {fixed_location}\n"
-                f"Google Maps: Location unavailable"
+                "Location : Not available"
             )
 
         # ----------------------------------------------------
@@ -1109,8 +1086,7 @@ AI-POWERED CONSTRUCTION PPE DETECTION SYSTEM
 
 🚨 PPE SAFETY VIOLATION DETECTED
 
-GuardX-AI has detected a potential PPE safety
-violation.
+GuardX-AI has detected a potential PPE violation.
 
 ------------------------------------------------
 VIOLATION DETAILS
@@ -1128,28 +1104,27 @@ LOCATION
 {location_text}
 
 ------------------------------------------------
-SAFETY ACTION REQUIRED
+ACTION REQUIRED
 ------------------------------------------------
 
 Please immediately verify the detected worker.
 
 Ensure that the required Personal Protective
-Equipment (PPE) is being worn correctly.
+Equipment is being worn correctly.
 
 This alert indicates a potential unsafe
-working condition and should be verified
-immediately.
+working condition and should be verified.
 
 ------------------------------------------------
 
 GuardX-AI
 Construction PPE Safety Monitoring System
 
-This is an automatically generated safety alert.
+Automatically generated safety alert.
 """
 
         # ----------------------------------------------------
-        # EMAIL MESSAGE
+        # SEND
         # ----------------------------------------------------
 
         message = EmailMessage()
@@ -1159,10 +1134,6 @@ This is an automatically generated safety alert.
         message["Subject"] = subject
 
         message.set_content(body)
-
-        # ----------------------------------------------------
-        # GMAIL SMTP
-        # ----------------------------------------------------
 
         with smtplib.SMTP(
             "smtp.gmail.com",
@@ -1185,6 +1156,8 @@ This is an automatically generated safety alert.
                 message
             )
 
+        st.session_state.email_error = None
+
         return True
 
     except Exception as e:
@@ -1195,253 +1168,7 @@ This is an automatically generated safety alert.
 
 
 # ============================================================
-# EXTRACT DETECTIONS
-# ============================================================
-
-def extract_detections(result):
-
-    detections = []
-
-    if result.boxes is None:
-        return detections
-
-    for box in result.boxes:
-
-        try:
-
-            class_id = int(
-                box.cls[0]
-            )
-
-            confidence = float(
-                box.conf[0]
-            )
-
-            name = str(
-                result.names[class_id]
-            )
-
-            detections.append(
-                (
-                    name,
-                    confidence
-                )
-            )
-
-        except Exception:
-            continue
-
-    return detections
-
-
-# ============================================================
-# NORMALIZE CLASS NAME
-# ============================================================
-
-def normalize_class_name(name):
-
-    normalized = str(
-        name
-    ).lower().strip()
-
-    normalized = normalized.replace(
-        "_",
-        "-"
-    )
-
-    normalized = " ".join(
-        normalized.split()
-    )
-
-    return normalized
-
-
-# ============================================================
-# PPE VIOLATIONS
-# ============================================================
-
-def get_violations(detections):
-
-    violations = []
-
-    for name, confidence in detections:
-
-        normalized_name = normalize_class_name(
-            name
-        )
-
-        # ----------------------------------------------------
-        # NO HARDHAT
-        # ----------------------------------------------------
-
-        if normalized_name in {
-            "no-hardhat",
-            "no hardhat"
-        }:
-
-            violations.append(
-                (
-                    name,
-                    confidence
-                )
-            )
-
-        # ----------------------------------------------------
-        # NO MASK
-        # ----------------------------------------------------
-
-        elif normalized_name in {
-            "no-mask",
-            "no mask"
-        }:
-
-            violations.append(
-                (
-                    name,
-                    confidence
-                )
-            )
-
-        # ----------------------------------------------------
-        # NO SAFETY VEST
-        # ----------------------------------------------------
-
-        elif normalized_name in {
-            "no-safety-vest",
-            "no safety vest"
-        }:
-
-            if confidence >= NO_VEST_CONFIDENCE:
-
-                violations.append(
-                    (
-                        name,
-                        confidence
-                    )
-                )
-
-    return violations
-
-
-# ============================================================
-# DISPLAY VIOLATION BOX
-# ============================================================
-
-def display_violation_box(violations):
-
-    if not violations:
-        return
-
-    violation_names = []
-
-    for name, confidence in violations:
-
-        clean_name = str(
-            name
-        ).strip()
-
-        if clean_name not in violation_names:
-
-            violation_names.append(
-                clean_name
-            )
-
-    violation_text = ", ".join(
-        violation_names
-    )
-
-    # IMPORTANT:
-    # HTML starts from column 0.
-    # This prevents Streamlit from showing HTML as CODE.
-    html = f"""
-<div class="violation-box">
-<div class="violation-title">
-🚨 PPE VIOLATION DETECTED
-</div>
-<div class="violation-text">
-Violations: <strong>{violation_text}</strong>
-</div>
-</div>
-"""
-
-    st.markdown(
-        html,
-        unsafe_allow_html=True
-    )
-
-
-# ============================================================
-# DISPLAY SAFE BOX
-# ============================================================
-
-def display_safe_box():
-
-    html = """
-<div class="safe-box">
-🟢 SAFE — No PPE violation detected.
-</div>
-"""
-
-    st.markdown(
-        html,
-        unsafe_allow_html=True
-    )
-
-
-# ============================================================
-# DISPLAY DETECTIONS
-# ============================================================
-
-def display_detections(detections):
-
-    if not detections:
-
-        st.info(
-            "No objects detected."
-        )
-
-        return
-
-    st.markdown(
-        "### 🔎 Detected Objects"
-    )
-
-    for name, confidence in detections:
-
-        normalized = normalize_class_name(
-            name
-        )
-
-        # Hide low-confidence NO-Vest
-        if (
-            normalized in {
-                "no-safety-vest",
-                "no safety vest"
-            }
-            and
-            confidence < NO_VEST_CONFIDENCE
-        ):
-            continue
-
-        html = f"""
-<div class="object-card">
-<span class="object-name">
-{name}
-</span>
-<span class="object-confidence">
-{confidence * 100:.1f}%
-</span>
-</div>
-"""
-
-        st.markdown(
-            html,
-            unsafe_allow_html=True
-        )
-
-
-# ============================================================
-# HANDLE ALERTS
+# ALERT HANDLER
 # ============================================================
 
 def handle_violation_alert(
@@ -1453,15 +1180,15 @@ def handle_violation_alert(
         return
 
     # --------------------------------------------------------
-    # GET LOCATION
+    # LOCATION
     # --------------------------------------------------------
 
     location_data = st.session_state.get(
         "location"
     )
 
-    # If location is already available,
-    # don't ask again.
+    # If user already allowed location,
+    # use stored location.
     if not location_data:
 
         try:
@@ -1469,11 +1196,7 @@ def handle_violation_alert(
             location_result = get_live_location()
 
             if (
-                location_result
-                and isinstance(
-                    location_result,
-                    str
-                )
+                isinstance(location_result, str)
                 and location_result.startswith("{")
             ):
 
@@ -1489,13 +1212,13 @@ def handle_violation_alert(
             location_data = None
 
     # --------------------------------------------------------
-    # VIOLATION TEXT
+    # TEXT
     # --------------------------------------------------------
 
     violation_text = ", ".join(
         sorted(
             set(
-                str(name)
+                name
                 for name, confidence
                 in violations
             )
@@ -1506,56 +1229,37 @@ def handle_violation_alert(
     # PUSH
     # --------------------------------------------------------
 
-    push_sent = False
-
     if st.session_state.fcm_token:
 
-        push_sent = send_push_notification(
-
+        push_success = send_push_notification(
             st.session_state.fcm_token,
-
             "🚨 GuardX-AI Safety Alert",
-
-            f"PPE violation detected: "
-            f"{violation_text}"
+            f"PPE violation detected: {violation_text}"
         )
+
+        if push_success:
+
+            st.success(
+                "📲 Push safety alert sent!"
+            )
+
+        else:
+
+            st.warning(
+                "⚠️ Push notification failed."
+            )
 
     # --------------------------------------------------------
     # EMAIL
     # --------------------------------------------------------
 
-    email_sent = send_email_alert(
+    email_success = send_email_alert(
         violations,
         source,
         location_data
     )
 
-    # --------------------------------------------------------
-    # ALERT STATUS UI
-    # --------------------------------------------------------
-
-    if push_sent:
-
-        st.success(
-            "📲 Safety push notification sent!"
-        )
-
-    elif st.session_state.push_enabled:
-
-        st.warning(
-            "⚠️ Violation detected, but push notification failed."
-        )
-
-        if st.session_state.push_error:
-
-            st.caption(
-                "Push error: "
-                + str(
-                    st.session_state.push_error
-                )
-            )
-
-    if email_sent:
+    if email_success:
 
         st.success(
             "📧 Gmail safety alert sent successfully!"
@@ -1564,17 +1268,73 @@ def handle_violation_alert(
     else:
 
         st.error(
-            "❌ Violation detected, but Gmail alert could not be sent."
+            "❌ Gmail alert could not be sent."
         )
 
         if st.session_state.email_error:
 
             st.caption(
                 "Email error: "
-                + str(
-                    st.session_state.email_error
-                )
+                + st.session_state.email_error
             )
+
+
+# ============================================================
+# DISPLAY VIOLATION
+# ============================================================
+
+def display_violation_box(violations):
+
+    if not violations:
+        return
+
+    names = []
+
+    for name, confidence in violations:
+
+        if name not in names:
+            names.append(name)
+
+    text = ", ".join(names)
+
+    st.markdown(
+        f"""
+        <div class="violation-box">
+
+            <div class="violation-title">
+                🚨 PPE VIOLATION DETECTED
+            </div>
+
+            <div class="violation-text">
+                Detected:
+                <strong>{text}</strong>
+            </div>
+
+            <div class="violation-text">
+                🔴 Red bounding box indicates
+                a safety violation.
+            </div>
+
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+
+
+# ============================================================
+# SAFE BOX
+# ============================================================
+
+def display_safe_box():
+
+    st.markdown(
+        """
+        <div class="safe-box">
+            🟢 SAFE — No PPE violation detected.
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
 
 
 # ============================================================
@@ -1585,183 +1345,213 @@ if st.session_state.page == "home":
 
     st.markdown(
         """
-<div class="main-title">
-🦺 GuardX-AI – Construction PPE Detection System
-</div>
-""",
+        <div class="hero">
+
+            <div class="hero-badge">
+                ✨ AI-POWERED SAFETY MONITORING
+            </div>
+
+            <div class="hero-title">
+                🦺 GuardX-AI
+            </div>
+
+            <div class="hero-subtitle">
+                Construction PPE Detection & Safety Alert System
+            </div>
+
+        </div>
+        """,
         unsafe_allow_html=True
     )
 
     left_col, right_col = st.columns(
-        [0.38, 0.62],
+        [0.40, 0.60],
         gap="large"
     )
 
-    # --------------------------------------------------------
+    # ========================================================
     # LEFT
-    # --------------------------------------------------------
+    # ========================================================
 
     with left_col:
 
         st.markdown(
             """
-<div class="aicw-text">
-AI Career for Women<br>
-(AICW)
-</div>
-""",
-            unsafe_allow_html=True
-        )
+            <div class="glass-card aicw-card">
 
-        st.markdown(
-            """
-<div class="capstone-text">
-Capstone Project
-</div>
-""",
+                <div class="aicw-icon">
+                    👩🏻‍💻
+                </div>
+
+                <div class="aicw-title">
+                    AI Career for Women
+                </div>
+
+                <div class="aicw-subtitle">
+                    AICW • Capstone Project
+                </div>
+
+                <div class="capstone">
+                    🚀 Intelligent Safety • Real-Time Detection
+                </div>
+
+            </div>
+            """,
             unsafe_allow_html=True
         )
 
         st.write("")
 
         if st.button(
-            "🔍  PREDICT",
-            key="home_predict_button",
-            use_container_width=True
+            "🔍  START PPE DETECTION",
+            key="home_predict_button"
         ):
 
             st.session_state.page = "predict"
 
             st.rerun()
 
-    # --------------------------------------------------------
+    # ========================================================
     # RIGHT
-    # --------------------------------------------------------
+    # ========================================================
 
     with right_col:
 
         st.markdown(
             """
-<div class="description-title">
-Project Description
-</div>
-""",
+            <div class="glass-card">
+
+                <div class="card-title">
+                    🛡️ What is GuardX-AI?
+                </div>
+
+                <div class="card-text">
+
+                    Construction sites involve high-risk
+                    activities where Personal Protective
+                    Equipment is essential for worker safety.
+
+                    <br><br>
+
+                    GuardX-AI uses YOLO-based computer vision
+                    to automatically identify PPE violations
+                    from images, camera captures and videos.
+
+                    <br><br>
+
+                    🚨 Unsafe conditions are highlighted
+                    with red bounding boxes and safety alerts
+                    can be delivered through Gmail and browser
+                    push notifications.
+
+                </div>
+
+            </div>
+            """,
             unsafe_allow_html=True
         )
 
-        with st.container(border=True):
-
-            st.write(
-                "Construction sites involve high-risk activities "
-                "where proper Personal Protective Equipment (PPE) "
-                "is essential for worker safety. Manual monitoring "
-                "of PPE continuously is difficult and time-consuming."
-            )
-
-            st.write(
-                "GuardX-AI is an AI-powered Construction PPE "
-                "Detection System that uses YOLO object detection "
-                "to identify PPE violations from construction-site "
-                "images, camera captures, and videos."
-            )
-
-            st.write(
-                "When a potential PPE violation is detected, "
-                "GuardX-AI provides an on-screen warning and "
-                "can send a safety alert through push notification "
-                "and Gmail."
-            )
-
+    st.write("")
     st.write("")
 
-    # --------------------------------------------------------
-    # BOTTOM CARDS
-    # --------------------------------------------------------
 
-    team_col, gmail_col, guide_col = st.columns(
-        [1.25, 1.25, 0.75],
-        gap="large"
-    )
-
+    # ========================================================
     # TEAM
-
-    with team_col:
-
-        with st.container(border=True):
-
-            st.markdown(
-                """
-<div class="card-heading">
-TEAM MEMBERS
-</div>
-
-<div class="card-text">
-1. Y.D.V.Sivani<br>
-2. V.L.S.Asritha<br>
-3. R.Likhitha<br>
-4. S.Poojitha sri
-</div>
-""",
-                unsafe_allow_html=True
-            )
-
-    # GMAIL
-
-    with gmail_col:
-
-        with st.container(border=True):
-
-            st.markdown(
-                """
-<div class="card-heading">
-GMAIL
-</div>
-
-<div class="card-text">
-yallashivani@gmail.com<br>
-Asrithavantipalli@gmail.com<br>
-likhitharayudu@gmail.com<br>
-pujithasari@gmail.com
-</div>
-""",
-                unsafe_allow_html=True
-            )
-
-    # GUIDE
-
-    with guide_col:
-
-        with st.container(border=True):
-
-            st.markdown(
-                """
-<div class="card-heading">
-GUIDE NAME
-</div>
-
-<div class="card-text">
-MD.Abdul Aziz
-</div>
-
-<br>
-
-<div class="card-heading">
-DESIGNATION
-</div>
-
-<div class="card-text">
-Trainer, Co-Lead-AICW
-</div>
-""",
-                unsafe_allow_html=True
-            )
+    # ========================================================
 
     st.markdown(
         """
-<div class="footer-text">
-GuardX-AI – AI-Powered Construction PPE Safety Monitoring
-</div>
-""",
+        <div class="card-title">
+            👩🏻‍💻 Our Team
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+
+    c1, c2, c3, c4 = st.columns(4)
+
+    members = [
+        ("👩🏻‍💻", "Y.D.V.Sivani", "AI / ML"),
+        ("👩🏻‍💻", "V.L.S.Asritha", "AI / ML"),
+        ("👩🏻‍💻", "R.Likhitha", "Development"),
+        ("👩🏻‍💻", "S.Poojitha Sri", "Development")
+    ]
+
+    for col, member in zip(
+        [c1, c2, c3, c4],
+        members
+    ):
+
+        with col:
+
+            st.markdown(
+                f"""
+                <div class="member-card">
+
+                    <div class="avatar">
+                        {member[0]}
+                    </div>
+
+                    <div class="member-name">
+                        {member[1]}
+                    </div>
+
+                    <div class="member-role">
+                        {member[2]}
+                    </div>
+
+                </div>
+                """,
+                unsafe_allow_html=True
+            )
+
+
+    st.write("")
+
+
+    # ========================================================
+    # GUIDE
+    # ========================================================
+
+    st.markdown(
+        """
+        <div class="member-card">
+
+            <div style="display:flex;align-items:center;gap:18px;">
+
+                <div class="avatar"
+                     style="margin:0;">
+                    👨🏻‍🏫
+                </div>
+
+                <div>
+
+                    <div class="member-name"
+                         style="font-size:18px;">
+                        MD. Abdul Aziz
+                    </div>
+
+                    <div class="member-role"
+                         style="font-size:13px;">
+                        Trainer • Co-Lead – AICW
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+
+
+    st.markdown(
+        """
+        <div class="footer">
+            🦺 GuardX-AI • Building Safer Construction Sites with AI
+        </div>
+        """,
         unsafe_allow_html=True
     )
 
@@ -1774,24 +1564,20 @@ else:
 
     st.markdown(
         """
-<div class="detect-title">
-🦺 GuardX-AI
-</div>
-""",
+        <div class="detect-title">
+            🦺 GuardX-AI Detection Center
+        </div>
+
+        <div class="detect-subtitle">
+            Intelligent PPE monitoring • Visual alerts • Email safety alerts
+        </div>
+        """,
         unsafe_allow_html=True
     )
 
-    st.markdown(
-        """
-<div class="detect-subtitle">
-AI-Powered Construction PPE Detection & Safety Monitoring
-</div>
-""",
-        unsafe_allow_html=True
-    )
 
     # ========================================================
-    # LOAD MODEL
+    # MODEL
     # ========================================================
 
     try:
@@ -1805,14 +1591,13 @@ AI-Powered Construction PPE Detection & Safety Monitoring
         )
 
         st.info(
-            "Make sure best.pt is in the same folder as app.py."
+            "best.pt file app.py same folder lo undali."
         )
 
-        st.caption(
-            str(e)
-        )
+        st.caption(str(e))
 
         st.stop()
+
 
     # ========================================================
     # MODEL CARD
@@ -1822,148 +1607,165 @@ AI-Powered Construction PPE Detection & Safety Monitoring
 
         st.markdown(
             """
-<div class="model-header">
-🤖 GuardX-AI Detection Model
-</div>
-""",
+            <div class="card-title">
+                🤖 GuardX-AI Vision Model
+            </div>
+            """,
             unsafe_allow_html=True
         )
-
-        st.write(
-            "Detected PPE categories"
-        )
-
-        classes = [
-            ("🪖", "Hardhat"),
-            ("🚨", "NO-Hardhat"),
-            ("😷", "Mask"),
-            ("🚨", "NO-Mask"),
-            ("🦺", "Safety Vest"),
-            ("🚨", "NO-Safety Vest")
-        ]
-
-        pills = ""
-
-        for icon, name in classes:
-
-            pills += (
-                f'<span class="class-pill">'
-                f'{icon} {name}'
-                f'</span>'
-            )
-
-        st.markdown(
-            pills,
-            unsafe_allow_html=True
-        )
-
-        st.caption(
-            f"General confidence: {GENERAL_CONFIDENCE:.2f} "
-            f"| NO-Safety Vest: {NO_VEST_CONFIDENCE:.2f}"
-        )
-
-    st.write("")
-
-    # ========================================================
-    # PUSH NOTIFICATIONS
-    # ========================================================
-
-    with st.container(border=True):
 
         st.markdown(
             """
-<div class="model-header">
-🔔 Safety Push Notifications
-</div>
-""",
-            unsafe_allow_html=True
+            🪖 Hardhat &nbsp;&nbsp;
+            🚨 NO-Hardhat &nbsp;&nbsp;
+            😷 Mask &nbsp;&nbsp;
+            🚨 NO-Mask &nbsp;&nbsp;
+            🦺 Safety Vest &nbsp;&nbsp;
+            🚨 NO-Safety Vest
+            """
         )
 
-        st.write(
-            "Enable browser notifications to receive an "
-            "instant safety alert when a PPE violation is detected."
+        st.caption(
+            f"Detection confidence: {GENERAL_CONFIDENCE:.2f} "
+            f"| NO-Safety Vest: {NO_VEST_CONFIDENCE:.2f}"
         )
 
-        if not st.session_state.push_enabled:
-
-            if st.button(
-                "🔔 Enable Push Notifications",
-                key="prediction_push_enable",
-                use_container_width=True
-            ):
-
-                token_result = get_fcm_token()
-
-                if token_result:
-
-                    if isinstance(
-                        token_result,
-                        str
-                    ):
-
-                        if token_result.startswith(
-                            "ERROR:"
-                        ):
-
-                            st.error(
-                                "❌ Push notification setup failed."
-                            )
-
-                            st.caption(
-                                token_result
-                            )
-
-                        elif token_result == "PERMISSION_DENIED":
-
-                            st.warning(
-                                "🔕 Notification permission denied."
-                            )
-
-                        elif token_result == "NOT_SUPPORTED":
-
-                            st.warning(
-                                "This browser does not support notifications."
-                            )
-
-                        elif token_result == "SERVICE_WORKER_NOT_SUPPORTED":
-
-                            st.warning(
-                                "Browser service workers are not supported."
-                            )
-
-                        elif token_result == "NO_TOKEN":
-
-                            st.warning(
-                                "FCM token was not generated."
-                            )
-
-                        else:
-
-                            st.session_state.fcm_token = (
-                                token_result
-                            )
-
-                            st.session_state.push_enabled = True
-
-                            st.success(
-                                "🔔 Push notifications enabled!"
-                            )
-
-                            st.rerun()
-
-                else:
-
-                    st.warning(
-                        "Waiting for notification permission..."
-                    )
-
-        else:
-
-            st.success(
-                "🔔 Push notifications are enabled."
-            )
 
     st.write("")
+
+
+    # ========================================================
+    # ALERT CARDS
+    # ========================================================
+
+    alert1, alert2 = st.columns(2, gap="large")
+
+
+    # ========================================================
+    # PUSH
+    # ========================================================
+
+    with alert1:
+
+        with st.container(border=True):
+
+            st.markdown(
+                "### 🔔 Push Alerts"
+            )
+
+            st.write(
+                "Receive browser/mobile safety notifications "
+                "when a violation is detected."
+            )
+
+            if not st.session_state.push_enabled:
+
+                if st.button(
+                    "🔔 Enable Push Notifications",
+                    key="prediction_push_enable"
+                ):
+
+                    token_result = get_fcm_token()
+
+                    if (
+                        isinstance(token_result, str)
+                        and token_result
+                        and not token_result.startswith(
+                            (
+                                "ERROR:",
+                                "PERMISSION_DENIED",
+                                "NOT_SUPPORTED",
+                                "SERVICE_WORKER_NOT_SUPPORTED",
+                                "NO_TOKEN"
+                            )
+                        )
+                    ):
+
+                        st.session_state.fcm_token = (
+                            token_result
+                        )
+
+                        st.session_state.push_enabled = True
+
+                        st.success(
+                            "🔔 Push notifications enabled!"
+                        )
+
+                        st.rerun()
+
+                    elif token_result == "PERMISSION_DENIED":
+
+                        st.warning(
+                            "🔕 Browser notification permission denied."
+                        )
+
+                    elif token_result == "NO_TOKEN":
+
+                        st.warning(
+                            "FCM token generate avvaledu."
+                        )
+
+                    elif (
+                        isinstance(token_result, str)
+                        and token_result.startswith("ERROR:")
+                    ):
+
+                        st.error(
+                            "❌ Push setup failed."
+                        )
+
+                        st.caption(
+                            token_result
+                        )
+
+            else:
+
+                st.success(
+                    "🟢 Push notifications are enabled."
+                )
+
+
+    # ========================================================
+    # EMAIL STATUS
+    # ========================================================
+
+    with alert2:
+
+        with st.container(border=True):
+
+            st.markdown(
+                "### 📧 Gmail Safety Alerts"
+            )
+
+            st.write(
+                "Every detected violation can generate "
+                "an automatic Gmail safety alert."
+            )
+
+            if (
+                "EMAIL_SENDER" in st.secrets
+                and "EMAIL_PASSWORD" in st.secrets
+                and "EMAIL_RECEIVER" in st.secrets
+            ):
+
+                st.success(
+                    "🟢 Gmail is configured."
+                )
+
+            else:
+
+                st.warning(
+                    "🟡 Gmail is not configured yet."
+                )
+
+                st.caption(
+                    "Add EMAIL_SENDER, EMAIL_PASSWORD "
+                    "and EMAIL_RECEIVER in Streamlit Secrets."
+                )
+
+
+    st.write("")
+
 
     # ========================================================
     # LOCATION
@@ -1972,76 +1774,51 @@ AI-Powered Construction PPE Detection & Safety Monitoring
     with st.container(border=True):
 
         st.markdown(
-            """
-<div class="model-header">
-📍 Live Safety Location
-</div>
-""",
-            unsafe_allow_html=True
+            "### 📍 Safety Location"
         )
 
         st.write(
-            "Allow location access so the Gmail safety alert "
-            "can include the current construction-site location."
+            "Allow location access if you want the safety "
+            "email to contain the current Google Maps location."
         )
 
         if st.button(
-            "📍 Allow Location Access",
-            key="location_button",
-            use_container_width=True
+            "📍 Enable Live Location",
+            key="location_button"
         ):
 
             location_result = get_live_location()
 
-            if location_result:
+            if (
+                isinstance(location_result, str)
+                and location_result.startswith("{")
+            ):
 
-                if (
-                    isinstance(
-                        location_result,
-                        str
+                try:
+
+                    location_data = json.loads(
+                        location_result
                     )
-                    and
-                    location_result.startswith("{")
-                ):
 
-                    try:
+                    st.session_state.location = (
+                        location_data
+                    )
 
-                        location_data = json.loads(
-                            location_result
-                        )
+                    st.success(
+                        "📍 Location successfully enabled."
+                    )
 
-                        st.session_state.location = (
-                            location_data
-                        )
-
-                        st.success(
-                            "📍 Live location captured successfully."
-                        )
-
-                    except Exception:
-
-                        st.warning(
-                            "Location data could not be read."
-                        )
-
-                elif location_result == (
-                    "LOCATION_NOT_SUPPORTED"
-                ):
+                except Exception:
 
                     st.warning(
-                        "This browser does not support location."
+                        "Location data could not be read."
                     )
 
-                elif str(
-                    location_result
-                ).startswith(
-                    "LOCATION_ERROR:"
-                ):
+            else:
 
-                    st.warning(
-                        "Location permission was denied "
-                        "or location could not be obtained."
-                    )
+                st.warning(
+                    "Location permission was not available."
+                )
 
         if st.session_state.location:
 
@@ -2055,20 +1832,21 @@ AI-Powered Construction PPE Detection & Safety Monitoring
 
             maps_link = (
                 "https://www.google.com/maps/"
-                "?api=1&query="
+                "search/?api=1&query="
                 f"{latitude},{longitude}"
             )
 
             st.success(
-                f"📍 Location ready: "
-                f"{latitude:.6f}, {longitude:.6f}"
+                f"📍 {latitude:.6f}, {longitude:.6f}"
             )
 
             st.markdown(
-                f"[🗺️ Open Current Location in Google Maps]({maps_link})"
+                f"[🗺️ Open Location in Google Maps]({maps_link})"
             )
 
+
     st.write("")
+
 
     # ========================================================
     # BACK
@@ -2076,22 +1854,23 @@ AI-Powered Construction PPE Detection & Safety Monitoring
 
     if st.button(
         "← Back to Home",
-        key="prediction_back_button",
-        use_container_width=True
+        key="prediction_back_button"
     ):
 
         st.session_state.page = "home"
 
         st.rerun()
 
+
     st.write("")
 
+
     # ========================================================
-    # INPUT TYPE
+    # INPUT SELECTOR
     # ========================================================
 
     input_type = st.radio(
-        "Select Input Type",
+        "Choose Detection Mode",
         [
             "🖼️ Image",
             "📷 Camera",
@@ -2119,81 +1898,83 @@ AI-Powered Construction PPE Detection & Safety Monitoring
 
         with input_col:
 
-            st.markdown(
-                "### 📤 Upload Image"
-            )
+            with st.container(border=True):
 
-            uploaded_image = st.file_uploader(
-                "Choose a construction image",
-                type=[
-                    "jpg",
-                    "jpeg",
-                    "png"
-                ],
-                key="image_upload"
-            )
-
-            if uploaded_image:
-
-                image = Image.open(
-                    uploaded_image
-                ).convert("RGB")
-
-                st.image(
-                    image,
-                    caption="Input Image",
-                    use_container_width=True
+                st.markdown(
+                    "### 📸 Upload Construction Image"
                 )
 
-                if st.button(
-                    "🔍 Detect PPE",
-                    key="image_detect_button",
-                    use_container_width=True
-                ):
+                uploaded_image = st.file_uploader(
+                    "Choose image",
+                    type=[
+                        "jpg",
+                        "jpeg",
+                        "png"
+                    ],
+                    key="image_upload"
+                )
 
-                    with st.spinner(
-                        "🤖 GuardX-AI is analyzing the image..."
+                if uploaded_image:
+
+                    image = Image.open(
+                        uploaded_image
+                    ).convert("RGB")
+
+                    st.image(
+                        image,
+                        caption="Original Image",
+                        use_container_width=True
+                    )
+
+                    if st.button(
+                        "🔍 Detect PPE",
+                        key="image_detect_button"
                     ):
 
-                        result = model.predict(
-                            np.array(image),
-                            conf=GENERAL_CONFIDENCE,
-                            verbose=False
-                        )[0]
+                        with st.spinner(
+                            "🔎 AI is analysing the image..."
+                        ):
 
-                    annotated = result.plot()
+                            result = model.predict(
+                                np.array(image),
+                                conf=GENERAL_CONFIDENCE,
+                                verbose=False
+                            )[0]
 
-                    annotated = cv2.cvtColor(
-                        annotated,
-                        cv2.COLOR_BGR2RGB
-                    )
+                        frame = np.array(image)
 
-                    detections = extract_detections(
-                        result
-                    )
-
-                    violations = get_violations(
-                        detections
-                    )
-
-                    st.session_state.result_image = (
-                        annotated
-                    )
-
-                    st.session_state.detections = (
-                        detections
-                    )
-
-                    st.session_state.image_violations = (
-                        violations
-                    )
-
-                    if violations:
-
-                        handle_violation_alert(
-                            violations,
-                            "image"
+                        detections = extract_detections(
+                            result
                         )
+
+                        annotated = draw_custom_boxes(
+                            frame,
+                            detections
+                        )
+
+                        st.session_state.result_image = (
+                            annotated
+                        )
+
+                        st.session_state.detections = (
+                            detections
+                        )
+
+                        violations = get_violations(
+                            detections
+                        )
+
+                        st.session_state.image_violations = (
+                            violations
+                        )
+
+                        if violations:
+
+                            handle_violation_alert(
+                                violations,
+                                "image"
+                            )
+
 
         # ----------------------------------------------------
         # RESULT
@@ -2201,52 +1982,82 @@ AI-Powered Construction PPE Detection & Safety Monitoring
 
         with result_col:
 
-            st.markdown(
-                "### 🎯 Detection Result"
-            )
+            with st.container(border=True):
 
-            if (
-                st.session_state.result_image
-                is None
-            ):
-
-                st.info(
-                    "Upload an image and click "
-                    "**Detect PPE** to see the result."
+                st.markdown(
+                    "### 🎯 Detection Result"
                 )
 
-            else:
+                if (
+                    st.session_state.result_image
+                    is None
+                ):
 
-                st.image(
-                    st.session_state.result_image,
-                    caption="GuardX-AI Detection Result",
-                    use_container_width=True
-                )
-
-                detections = (
-                    st.session_state.detections
-                )
-
-                violations = (
-                    st.session_state.get(
-                        "image_violations",
-                        []
-                    )
-                )
-
-                if violations:
-
-                    display_violation_box(
-                        violations
+                    st.info(
+                        "Upload an image and click Detect PPE."
                     )
 
                 else:
 
-                    display_safe_box()
+                    st.image(
+                        st.session_state.result_image,
+                        caption="GuardX-AI AI Result",
+                        use_container_width=True
+                    )
 
-                display_detections(
-                    detections
-                )
+                    violations = (
+                        st.session_state.image_violations
+                    )
+
+                    if violations:
+
+                        display_violation_box(
+                            violations
+                        )
+
+                    else:
+
+                        display_safe_box()
+
+                    detections = (
+                        st.session_state.detections
+                    )
+
+                    if detections:
+
+                        st.markdown(
+                            "### 🔎 Detected Objects"
+                        )
+
+                        for detection in detections:
+
+                            name = detection["name"]
+
+                            confidence = detection[
+                                "confidence"
+                            ]
+
+                            violation = detection[
+                                "violation"
+                            ]
+
+                            if violation:
+
+                                st.markdown(
+                                    f"""
+                                    🔴 **{name}**
+                                    — {confidence * 100:.1f}%
+                                    """
+                                )
+
+                            else:
+
+                                st.markdown(
+                                    f"""
+                                    🟢 **{name}**
+                                    — {confidence * 100:.1f}%
+                                    """
+                                )
 
 
     # ========================================================
@@ -2255,88 +2066,101 @@ AI-Powered Construction PPE Detection & Safety Monitoring
 
     elif input_type == "📷 Camera":
 
-        st.markdown(
-            "### 📷 Camera PPE Detection"
-        )
+        with st.container(border=True):
 
-        camera_image = st.camera_input(
-            "Take a photo of the construction site",
-            key="camera_input"
-        )
+            st.markdown(
+                "### 📷 Live Camera Capture"
+            )
 
-        if camera_image:
+            camera_image = st.camera_input(
+                "Take a photo",
+                key="camera_input"
+            )
 
-            image = Image.open(
-                camera_image
-            ).convert("RGB")
+            if camera_image:
 
-            if st.button(
-                "🔍 Detect PPE",
-                key="camera_detect_button",
-                use_container_width=True
-            ):
+                image = Image.open(
+                    camera_image
+                ).convert("RGB")
 
-                with st.spinner(
-                    "🤖 Analyzing camera image..."
+                if st.button(
+                    "🔍 Analyse Camera Image",
+                    key="camera_detect_button"
                 ):
 
-                    result = model.predict(
-                        np.array(image),
-                        conf=GENERAL_CONFIDENCE,
-                        verbose=False
-                    )[0]
+                    with st.spinner(
+                        "Analysing..."
+                    ):
 
-                annotated = result.plot()
+                        result = model.predict(
+                            np.array(image),
+                            conf=GENERAL_CONFIDENCE,
+                            verbose=False
+                        )[0]
 
-                annotated = cv2.cvtColor(
-                    annotated,
-                    cv2.COLOR_BGR2RGB
-                )
+                    frame = np.array(image)
 
-                detections = extract_detections(
-                    result
-                )
-
-                violations = get_violations(
-                    detections
-                )
-
-                st.session_state.camera_result = (
-                    annotated
-                )
-
-                st.session_state.camera_detections = (
-                    detections
-                )
-
-                st.session_state.camera_violations = (
-                    violations
-                )
-
-                st.image(
-                    annotated,
-                    caption="GuardX-AI Camera Result",
-                    use_container_width=True
-                )
-
-                if violations:
-
-                    display_violation_box(
-                        violations
+                    detections = extract_detections(
+                        result
                     )
 
-                    handle_violation_alert(
-                        violations,
-                        "camera image"
+                    annotated = draw_custom_boxes(
+                        frame,
+                        detections
                     )
 
-                else:
+                    st.image(
+                        annotated,
+                        caption="GuardX-AI Camera Result",
+                        use_container_width=True
+                    )
 
-                    display_safe_box()
+                    violations = get_violations(
+                        detections
+                    )
 
-                display_detections(
-                    detections
-                )
+                    if violations:
+
+                        display_violation_box(
+                            violations
+                        )
+
+                        handle_violation_alert(
+                            violations,
+                            "camera image"
+                        )
+
+                    else:
+
+                        display_safe_box()
+
+                    if detections:
+
+                        st.markdown(
+                            "### 🔎 Detected Objects"
+                        )
+
+                        for detection in detections:
+
+                            name = detection["name"]
+
+                            confidence = detection[
+                                "confidence"
+                            ]
+
+                            if detection["violation"]:
+
+                                st.markdown(
+                                    f"🔴 **{name}** "
+                                    f"— {confidence * 100:.1f}%"
+                                )
+
+                            else:
+
+                                st.markdown(
+                                    f"🟢 **{name}** "
+                                    f"— {confidence * 100:.1f}%"
+                                )
 
 
     # ========================================================
@@ -2345,45 +2169,37 @@ AI-Powered Construction PPE Detection & Safety Monitoring
 
     elif input_type == "🎥 Video":
 
-        st.markdown(
-            "### 🎥 Video PPE Detection"
-        )
+        with st.container(border=True):
 
-        uploaded_video = st.file_uploader(
-            "Upload construction video",
-            type=[
-                "mp4",
-                "avi",
-                "mov",
-                "mkv"
-            ],
-            key="video_upload"
-        )
-
-        if uploaded_video:
-
-            st.video(
-                uploaded_video
+            st.markdown(
+                "### 🎥 Construction Video Analysis"
             )
 
-            if st.button(
-                "🎥 Detect PPE in Video",
-                key="video_detect_button",
-                use_container_width=True
-            ):
+            uploaded_video = st.file_uploader(
+                "Upload video",
+                type=[
+                    "mp4",
+                    "avi",
+                    "mov",
+                    "mkv"
+                ],
+                key="video_upload"
+            )
 
-                with st.spinner(
-                    "🤖 GuardX-AI is processing the video..."
+            if uploaded_video:
+
+                st.video(
+                    uploaded_video
+                )
+
+                if st.button(
+                    "🎥 Analyse Entire Video",
+                    key="video_detect_button"
                 ):
 
-                    input_path = None
-                    output_path = None
-
-                    try:
-
-                        # ------------------------------------------------
-                        # INPUT VIDEO
-                        # ------------------------------------------------
+                    with st.spinner(
+                        "🎬 Processing video... Please wait."
+                    ):
 
                         input_file = tempfile.NamedTemporaryFile(
                             delete=False,
@@ -2396,21 +2212,9 @@ AI-Powered Construction PPE Detection & Safety Monitoring
 
                         input_file.close()
 
-                        input_path = input_file.name
-
-                        # ------------------------------------------------
-                        # OPEN VIDEO
-                        # ------------------------------------------------
-
                         cap = cv2.VideoCapture(
-                            input_path
+                            input_file.name
                         )
-
-                        if not cap.isOpened():
-
-                            raise Exception(
-                                "Unable to open uploaded video."
-                            )
 
                         fps = cap.get(
                             cv2.CAP_PROP_FPS
@@ -2430,10 +2234,6 @@ AI-Powered Construction PPE Detection & Safety Monitoring
                                 cv2.CAP_PROP_FRAME_HEIGHT
                             )
                         )
-
-                        # ------------------------------------------------
-                        # OUTPUT
-                        # ------------------------------------------------
 
                         output_file = tempfile.NamedTemporaryFile(
                             delete=False,
@@ -2455,23 +2255,7 @@ AI-Powered Construction PPE Detection & Safety Monitoring
                             (width, height)
                         )
 
-                        if not writer.isOpened():
-
-                            cap.release()
-
-                            raise Exception(
-                                "Unable to create output video."
-                            )
-
-                        # ------------------------------------------------
-                        # VIOLATIONS
-                        # ------------------------------------------------
-
                         video_violations = set()
-
-                        # ------------------------------------------------
-                        # FRAME LOOP
-                        # ------------------------------------------------
 
                         while True:
 
@@ -2486,25 +2270,29 @@ AI-Powered Construction PPE Detection & Safety Monitoring
                                 verbose=False
                             )[0]
 
-                            annotated = result.plot()
+                            detections = extract_detections(
+                                result
+                            )
+
+                            annotated = draw_custom_boxes(
+                                frame,
+                                detections
+                            )
 
                             writer.write(
                                 annotated
                             )
 
-                            frame_detections = (
-                                extract_detections(
-                                    result
-                                )
-                            )
-
                             frame_violations = (
                                 get_violations(
-                                    frame_detections
+                                    detections
                                 )
                             )
 
-                            for name, confidence in frame_violations:
+                            for (
+                                name,
+                                confidence
+                            ) in frame_violations:
 
                                 video_violations.add(
                                     name
@@ -2514,77 +2302,32 @@ AI-Powered Construction PPE Detection & Safety Monitoring
 
                         writer.release()
 
-                        # ------------------------------------------------
-                        # STORE RESULT
-                        # ------------------------------------------------
+                        try:
 
-                        st.session_state.video_result = (
-                            output_path
-                        )
-
-                        st.session_state.video_violations = (
-                            sorted(
-                                video_violations
+                            os.remove(
+                                input_file.name
                             )
-                        )
 
-                    except Exception as e:
+                        except Exception:
 
-                        st.error(
-                            "❌ Video processing failed."
-                        )
-
-                        st.caption(
-                            str(e)
-                        )
-
-                        try:
-                            cap.release()
-                        except:
                             pass
-
-                        try:
-                            writer.release()
-                        except:
-                            pass
-
-                    finally:
-
-                        if input_path:
-
-                            try:
-                                os.remove(
-                                    input_path
-                                )
-                            except:
-                                pass
-
-                # ----------------------------------------------------
-                # RESULT
-                # ----------------------------------------------------
-
-                if st.session_state.video_result:
 
                     st.success(
-                        "✅ Video processing completed successfully."
+                        "✅ Video processing completed!"
                     )
 
                     st.video(
-                        st.session_state.video_result
-                    )
-
-                    video_violations = (
-                        st.session_state.video_violations
+                        output_path
                     )
 
                     if video_violations:
 
                         video_violation_list = [
                             (
-                                violation,
+                                name,
                                 1.0
                             )
-                            for violation
+                            for name
                             in video_violations
                         ]
 
@@ -2602,6 +2345,15 @@ AI-Powered Construction PPE Detection & Safety Monitoring
                         display_safe_box()
 
 
-# ============================================================
-# END
-# ============================================================
+    # ========================================================
+    # FOOTER
+    # ========================================================
+
+    st.markdown(
+        """
+        <div class="footer">
+            🦺 GuardX-AI • AI-Powered Construction Safety
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
