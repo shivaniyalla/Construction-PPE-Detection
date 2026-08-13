@@ -9,6 +9,7 @@ import json
 import smtplib
 from email.message import EmailMessage
 from datetime import datetime
+from textwrap import dedent
 
 # Firebase
 import firebase_admin
@@ -62,6 +63,20 @@ NO_VEST_CONFIDENCE = 0.75
 
 
 # ============================================================
+# HTML RENDER HELPER
+# IMPORTANT:
+# dedent removes leading spaces so HTML will NOT appear
+# as plain code/text on the page.
+# ============================================================
+
+def render_html(content):
+    st.markdown(
+        dedent(content),
+        unsafe_allow_html=True
+    )
+
+
+# ============================================================
 # FIREBASE ADMIN
 # ============================================================
 
@@ -75,7 +90,9 @@ def initialize_firebase():
         if "firebase" not in st.secrets:
             return False
 
-        firebase_config = dict(st.secrets["firebase"])
+        firebase_config = dict(
+            st.secrets["firebase"]
+        )
 
         if "private_key" in firebase_config:
             firebase_config["private_key"] = (
@@ -83,9 +100,13 @@ def initialize_firebase():
                 .replace("\\n", "\n")
             )
 
-        cred = credentials.Certificate(firebase_config)
+        cred = credentials.Certificate(
+            firebase_config
+        )
 
-        firebase_admin.initialize_app(cred)
+        firebase_admin.initialize_app(
+            cred
+        )
 
         return True
 
@@ -131,21 +152,23 @@ st.markdown(
     """
 <style>
 
-/* =========================================================
-   MAIN APP
-========================================================= */
-
 .stApp {
     background:
-        radial-gradient(circle at 10% 10%,
+        radial-gradient(
+            circle at 10% 10%,
             rgba(124,58,237,0.18),
-            transparent 30%),
-        radial-gradient(circle at 90% 15%,
+            transparent 30%
+        ),
+        radial-gradient(
+            circle at 90% 15%,
             rgba(6,182,212,0.13),
-            transparent 28%),
-        radial-gradient(circle at 50% 100%,
+            transparent 28%
+        ),
+        radial-gradient(
+            circle at 50% 100%,
             rgba(236,72,153,0.08),
-            transparent 35%),
+            transparent 35%
+        ),
         #090b16;
 
     color: #f8fafc;
@@ -183,29 +206,42 @@ footer {
 
 .hero-badge {
     display: inline-block;
+
     padding: 7px 15px;
+
     border-radius: 30px;
+
     background: rgba(139,92,246,0.14);
-    border: 1px solid rgba(167,139,250,0.35);
+
+    border:
+        1px solid rgba(167,139,250,0.35);
+
     color: #c4b5fd;
+
     font-size: 13px;
+
     font-weight: 700;
+
     margin-bottom: 15px;
 }
 
 .hero-title {
     font-size: 56px;
+
     line-height: 1.1;
+
     font-weight: 900;
+
     letter-spacing: -2px;
 
-    background: linear-gradient(
-        90deg,
-        #ffffff,
-        #c4b5fd,
-        #67e8f9,
-        #f9a8d4
-    );
+    background:
+        linear-gradient(
+            90deg,
+            #ffffff,
+            #c4b5fd,
+            #67e8f9,
+            #f9a8d4
+        );
 
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
@@ -213,8 +249,11 @@ footer {
 
 .hero-subtitle {
     color: #cbd5e1;
+
     font-size: 19px;
+
     font-weight: 600;
+
     margin-top: 10px;
 }
 
@@ -231,8 +270,11 @@ footer {
             rgba(15,23,42,0.78)
         );
 
-    border: 1px solid rgba(148,163,184,0.17);
+    border:
+        1px solid rgba(148,163,184,0.17);
+
     border-radius: 24px;
+
     padding: 28px;
 
     box-shadow:
@@ -243,65 +285,89 @@ footer {
 }
 
 .home-card:hover {
-    border-color: rgba(139,92,246,0.40);
+    border-color:
+        rgba(139,92,246,0.40);
 }
 
 
 /* =========================================================
-   AICW CARD
+   AICW
 ========================================================= */
 
 .aicw-card {
     min-height: 330px;
+
     display: flex;
+
     flex-direction: column;
+
     justify-content: center;
 }
 
 .aicw-icon {
     font-size: 58px;
+
     margin-bottom: 15px;
 }
 
 .aicw-title {
     font-size: 30px;
+
     font-weight: 900;
+
     color: #ffffff;
 }
 
 .aicw-subtitle {
     color: #a78bfa;
+
     font-size: 18px;
+
     font-weight: 700;
+
     margin-top: 8px;
 }
 
 .capstone {
     margin-top: 22px;
+
     padding: 9px 15px;
+
     border-radius: 30px;
-    background: rgba(34,211,238,0.10);
-    border: 1px solid rgba(34,211,238,0.25);
+
+    background:
+        rgba(34,211,238,0.10);
+
+    border:
+        1px solid rgba(34,211,238,0.25);
+
     color: #67e8f9;
+
     font-weight: 700;
+
     display: inline-block;
 }
 
 
 /* =========================================================
-   ABOUT CARD
+   ABOUT
 ========================================================= */
 
 .about-title {
     color: #ffffff;
+
     font-size: 20px;
+
     font-weight: 850;
+
     margin-bottom: 14px;
 }
 
 .about-text {
     color: #aab5c7;
+
     font-size: 14px;
+
     line-height: 1.8;
 }
 
@@ -312,8 +378,11 @@ footer {
 
 .team-heading {
     color: #f8fafc;
+
     font-size: 22px;
+
     font-weight: 900;
+
     margin: 12px 0 16px 0;
 }
 
@@ -325,9 +394,13 @@ footer {
             rgba(15,23,42,0.72)
         );
 
-    border: 1px solid rgba(148,163,184,0.15);
+    border:
+        1px solid rgba(148,163,184,0.15);
+
     border-radius: 20px;
+
     padding: 20px;
+
     min-height: 165px;
 
     box-shadow:
@@ -336,11 +409,15 @@ footer {
 
 .avatar {
     width: 56px;
+
     height: 56px;
+
     border-radius: 50%;
 
     display: flex;
+
     align-items: center;
+
     justify-content: center;
 
     font-size: 28px;
@@ -360,13 +437,17 @@ footer {
 
 .member-name {
     color: #f8fafc;
+
     font-weight: 800;
+
     font-size: 15px;
 }
 
 .member-role {
     color: #94a3b8;
+
     font-size: 12px;
+
     margin-top: 4px;
 }
 
@@ -383,8 +464,11 @@ footer {
             rgba(15,23,42,0.78)
         );
 
-    border: 1px solid rgba(167,139,250,0.20);
+    border:
+        1px solid rgba(167,139,250,0.20);
+
     border-radius: 22px;
+
     padding: 20px 24px;
 
     box-shadow:
@@ -398,6 +482,7 @@ footer {
 
 div.stButton > button {
     width: 100%;
+
     min-height: 48px;
 
     border-radius: 13px !important;
@@ -415,6 +500,7 @@ div.stButton > button {
         1px solid rgba(167,139,250,0.4) !important;
 
     font-size: 14px !important;
+
     font-weight: 800 !important;
 
     box-shadow:
@@ -429,7 +515,8 @@ div.stButton > button:hover {
     box-shadow:
         0 12px 35px rgba(124,58,237,0.40);
 
-    border-color: #a78bfa !important;
+    border-color:
+        #a78bfa !important;
 }
 
 
@@ -438,14 +525,20 @@ div.stButton > button:hover {
 ========================================================= */
 
 div[data-testid="stRadio"] {
-    background: rgba(15,23,42,0.65);
-    border: 1px solid rgba(148,163,184,0.14);
+    background:
+        rgba(15,23,42,0.65);
+
+    border:
+        1px solid rgba(148,163,184,0.14);
+
     padding: 12px 18px;
+
     border-radius: 16px;
 }
 
 div[data-testid="stRadio"] label {
     color: #cbd5e1 !important;
+
     font-weight: 700 !important;
 }
 
@@ -455,9 +548,14 @@ div[data-testid="stRadio"] label {
 ========================================================= */
 
 div[data-testid="stFileUploader"] {
-    background: rgba(15,23,42,0.65);
-    border: 1px dashed rgba(139,92,246,0.45);
+    background:
+        rgba(15,23,42,0.65);
+
+    border:
+        1px dashed rgba(139,92,246,0.45);
+
     border-radius: 16px;
+
     padding: 10px;
 }
 
@@ -502,12 +600,29 @@ label {
 
 
 /* =========================================================
-   DETECTION TITLE
+   CARD TITLE
+========================================================= */
+
+.card-title {
+    color: #ffffff;
+
+    font-size: 20px;
+
+    font-weight: 900;
+
+    margin-bottom: 12px;
+}
+
+
+/* =========================================================
+   DETECTION
 ========================================================= */
 
 .detect-title {
     text-align: center;
+
     font-size: 44px;
+
     font-weight: 900;
 
     background:
@@ -519,13 +634,17 @@ label {
         );
 
     -webkit-background-clip: text;
+
     -webkit-text-fill-color: transparent;
 }
 
 .detect-subtitle {
     text-align: center;
+
     color: #94a3b8;
+
     font-size: 15px;
+
     margin-bottom: 28px;
 }
 
@@ -536,13 +655,19 @@ label {
 
 .safe-box {
     margin-top: 16px;
+
     padding: 18px;
+
     border-radius: 16px;
 
-    background: rgba(16,185,129,0.10);
-    border: 1px solid rgba(52,211,153,0.35);
+    background:
+        rgba(16,185,129,0.10);
+
+    border:
+        1px solid rgba(52,211,153,0.35);
 
     color: #6ee7b7 !important;
+
     font-weight: 800;
 }
 
@@ -553,7 +678,9 @@ label {
 
 .violation-box {
     margin-top: 16px;
+
     padding: 20px;
+
     border-radius: 17px;
 
     background:
@@ -563,7 +690,8 @@ label {
             rgba(127,29,29,0.12)
         );
 
-    border: 1px solid rgba(248,113,113,0.42);
+    border:
+        1px solid rgba(248,113,113,0.42);
 
     box-shadow:
         0 10px 30px rgba(239,68,68,0.12);
@@ -571,14 +699,19 @@ label {
 
 .violation-title {
     color: #fca5a5 !important;
+
     font-size: 18px;
+
     font-weight: 900;
 }
 
 .violation-text {
     color: #fecaca !important;
+
     font-size: 14px;
+
     font-weight: 700;
+
     margin-top: 8px;
 }
 
@@ -589,10 +722,14 @@ label {
 
 .alert-card {
     padding: 16px;
+
     border-radius: 15px;
 
-    background: rgba(59,130,246,0.08);
-    border: 1px solid rgba(96,165,250,0.22);
+    background:
+        rgba(59,130,246,0.08);
+
+    border:
+        1px solid rgba(96,165,250,0.22);
 
     color: #bfdbfe;
 }
@@ -604,8 +741,11 @@ label {
 
 .footer {
     text-align: center;
+
     color: #64748b;
+
     font-size: 13px;
+
     padding: 35px 0 10px 0;
 }
 
@@ -664,7 +804,9 @@ def load_model():
 def normalize_class_name(name):
 
     name = str(name).lower().strip()
+
     name = name.replace("_", "-")
+
     name = " ".join(name.split())
 
     return name
@@ -694,6 +836,7 @@ def is_violation(name, confidence):
         "no-safety-vest",
         "no safety vest"
     }:
+
         return confidence >= NO_VEST_CONFIDENCE
 
     return False
@@ -712,11 +855,17 @@ def extract_detections(result):
 
     for box in result.boxes:
 
-        class_id = int(box.cls[0])
+        class_id = int(
+            box.cls[0]
+        )
 
-        confidence = float(box.conf[0])
+        confidence = float(
+            box.conf[0]
+        )
 
-        name = str(result.names[class_id])
+        name = str(
+            result.names[class_id]
+        )
 
         x1, y1, x2, y2 = map(
             int,
@@ -724,9 +873,18 @@ def extract_detections(result):
         )
 
         detections.append({
+
             "name": name,
+
             "confidence": confidence,
-            "box": (x1, y1, x2, y2),
+
+            "box": (
+                x1,
+                y1,
+                x2,
+                y2
+            ),
+
             "violation": is_violation(
                 name,
                 confidence
@@ -759,10 +917,13 @@ def get_violations(detections):
 
 
 # ============================================================
-# CUSTOM BOUNDING BOX DRAWING
+# CUSTOM BOXES
 # ============================================================
 
-def draw_custom_boxes(frame, detections):
+def draw_custom_boxes(
+    frame,
+    detections
+):
 
     output = frame.copy()
 
@@ -776,17 +937,33 @@ def draw_custom_boxes(frame, detections):
 
         violation = detection["violation"]
 
-        # RED for violations
         if violation:
 
-            color = (40, 40, 255)
-            label_color = (40, 40, 255)
+            color = (
+                40,
+                40,
+                255
+            )
 
-        # CYAN/GREEN for normal objects
+            label_color = (
+                40,
+                40,
+                255
+            )
+
         else:
 
-            color = (0, 220, 190)
-            label_color = (0, 220, 190)
+            color = (
+                0,
+                220,
+                190
+            )
+
+            label_color = (
+                0,
+                220,
+                190
+            )
 
         cv2.rectangle(
             output,
@@ -802,10 +979,15 @@ def draw_custom_boxes(frame, detections):
         )
 
         font = cv2.FONT_HERSHEY_SIMPLEX
+
         font_scale = 0.55
+
         thickness = 2
 
-        (tw, th), _ = cv2.getTextSize(
+        (
+            tw,
+            th
+        ), _ = cv2.getTextSize(
             label,
             font,
             font_scale,
@@ -819,8 +1001,14 @@ def draw_custom_boxes(frame, detections):
 
         cv2.rectangle(
             output,
-            (x1, label_y - th - 10),
-            (x1 + tw + 10, label_y),
+            (
+                x1,
+                label_y - th - 10
+            ),
+            (
+                x1 + tw + 10,
+                label_y
+            ),
             label_color,
             -1
         )
@@ -828,10 +1016,17 @@ def draw_custom_boxes(frame, detections):
         cv2.putText(
             output,
             label,
-            (x1 + 5, label_y - 5),
+            (
+                x1 + 5,
+                label_y - 5
+            ),
             font,
             font_scale,
-            (255, 255, 255),
+            (
+                255,
+                255,
+                255
+            ),
             thickness,
             cv2.LINE_AA
         )
@@ -948,7 +1143,8 @@ def get_fcm_token():
                     messaging,
                     {{
                         vapidKey: "{VAPID_KEY}",
-                        serviceWorkerRegistration: registration
+                        serviceWorkerRegistration:
+                            registration
                     }}
                 );
 
@@ -978,7 +1174,11 @@ def get_fcm_token():
 # PUSH NOTIFICATION
 # ============================================================
 
-def send_push_notification(token, title, body):
+def send_push_notification(
+    token,
+    title,
+    body
+):
 
     try:
 
@@ -986,10 +1186,13 @@ def send_push_notification(token, title, body):
             return False
 
         message = messaging.Message(
-            notification=messaging.Notification(
-                title=title,
-                body=body
-            ),
+
+            notification=
+                messaging.Notification(
+                    title=title,
+                    body=body
+                ),
+
             token=token
         )
 
@@ -1005,7 +1208,7 @@ def send_push_notification(token, title, body):
 
 
 # ============================================================
-# EMAIL
+# EMAIL ALERT
 # ============================================================
 
 def send_email_alert(
@@ -1037,9 +1240,17 @@ def send_email_alert(
 
             return False
 
-        sender = st.secrets["EMAIL_SENDER"]
-        password = st.secrets["EMAIL_PASSWORD"]
-        receiver = st.secrets["EMAIL_RECEIVER"]
+        sender = st.secrets[
+            "EMAIL_SENDER"
+        ]
+
+        password = st.secrets[
+            "EMAIL_PASSWORD"
+        ]
+
+        receiver = st.secrets[
+            "EMAIL_RECEIVER"
+        ]
 
         now = datetime.now()
 
@@ -1063,8 +1274,13 @@ def send_email_alert(
 
         if location_data:
 
-            latitude = location_data["latitude"]
-            longitude = location_data["longitude"]
+            latitude = location_data[
+                "latitude"
+            ]
+
+            longitude = location_data[
+                "longitude"
+            ]
 
             maps_link = (
                 "https://www.google.com/maps/"
@@ -1136,7 +1352,9 @@ Automatically generated safety alert.
         message = EmailMessage()
 
         message["From"] = sender
+
         message["To"] = receiver
+
         message["Subject"] = subject
 
         message.set_content(body)
@@ -1148,7 +1366,9 @@ Automatically generated safety alert.
         ) as server:
 
             server.ehlo()
+
             server.starttls()
+
             server.ehlo()
 
             server.login(
@@ -1191,11 +1411,18 @@ def handle_violation_alert(
 
         try:
 
-            location_result = get_live_location()
+            location_result = (
+                get_live_location()
+            )
 
             if (
-                isinstance(location_result, str)
-                and location_result.startswith("{")
+                isinstance(
+                    location_result,
+                    str
+                )
+                and location_result.startswith(
+                    "{"
+                )
             ):
 
                 location_data = json.loads(
@@ -1207,6 +1434,7 @@ def handle_violation_alert(
                 )
 
         except Exception:
+
             location_data = None
 
     violation_text = ", ".join(
@@ -1219,12 +1447,18 @@ def handle_violation_alert(
         )
     )
 
+    # PUSH
     if st.session_state.fcm_token:
 
-        push_success = send_push_notification(
-            st.session_state.fcm_token,
-            "🚨 GuardX-AI Safety Alert",
-            f"PPE violation detected: {violation_text}"
+        push_success = (
+            send_push_notification(
+                st.session_state.fcm_token,
+                "🚨 GuardX-AI Safety Alert",
+                (
+                    "PPE violation detected: "
+                    + violation_text
+                )
+            )
         )
 
         if push_success:
@@ -1239,6 +1473,7 @@ def handle_violation_alert(
                 "⚠️ Push notification failed."
             )
 
+    # EMAIL
     email_success = send_email_alert(
         violations,
         source,
@@ -1269,7 +1504,9 @@ def handle_violation_alert(
 # DISPLAY VIOLATION
 # ============================================================
 
-def display_violation_box(violations):
+def display_violation_box(
+    violations
+):
 
     if not violations:
         return
@@ -1279,11 +1516,12 @@ def display_violation_box(violations):
     for name, confidence in violations:
 
         if name not in names:
+
             names.append(name)
 
     text = ", ".join(names)
 
-    st.markdown(
+    render_html(
         f"""
         <div class="violation-box">
 
@@ -1302,8 +1540,7 @@ def display_violation_box(violations):
             </div>
 
         </div>
-        """,
-        unsafe_allow_html=True
+        """
     )
 
 
@@ -1313,13 +1550,12 @@ def display_violation_box(violations):
 
 def display_safe_box():
 
-    st.markdown(
+    render_html(
         """
         <div class="safe-box">
             🟢 SAFE — No PPE violation detected.
         </div>
-        """,
-        unsafe_allow_html=True
+        """
     )
 
 
@@ -1333,7 +1569,7 @@ if st.session_state.page == "home":
     # HERO
     # ========================================================
 
-    st.markdown(
+    render_html(
         """
         <div class="home-hero">
 
@@ -1350,8 +1586,7 @@ if st.session_state.page == "home":
             </div>
 
         </div>
-        """,
-        unsafe_allow_html=True
+        """
     )
 
 
@@ -1371,7 +1606,7 @@ if st.session_state.page == "home":
 
     with left_col:
 
-        st.markdown(
+        render_html(
             """
             <div class="home-card aicw-card">
 
@@ -1392,8 +1627,7 @@ if st.session_state.page == "home":
                 </div>
 
             </div>
-            """,
-            unsafe_allow_html=True
+            """
         )
 
         st.write("")
@@ -1403,7 +1637,9 @@ if st.session_state.page == "home":
             key="home_predict_button"
         ):
 
-            st.session_state.page = "predict"
+            st.session_state.page = (
+                "predict"
+            )
 
             st.rerun()
 
@@ -1414,7 +1650,7 @@ if st.session_state.page == "home":
 
     with right_col:
 
-        st.markdown(
+        render_html(
             """
             <div class="home-card">
 
@@ -1444,8 +1680,7 @@ if st.session_state.page == "home":
                 </div>
 
             </div>
-            """,
-            unsafe_allow_html=True
+            """
         )
 
 
@@ -1457,13 +1692,12 @@ if st.session_state.page == "home":
     # TEAM HEADING
     # ========================================================
 
-    st.markdown(
+    render_html(
         """
         <div class="team-heading">
             👩🏻‍💻 Our Team
         </div>
-        """,
-        unsafe_allow_html=True
+        """
     )
 
 
@@ -1477,10 +1711,30 @@ if st.session_state.page == "home":
     )
 
     members = [
-        ("👩🏻‍💻", "Y.D.V.Sivani", "AI / ML"),
-        ("👩🏻‍💻", "V.L.S.Asritha", "AI / ML"),
-        ("👩🏻‍💻", "R.Likhitha", "Development"),
-        ("👩🏻‍💻", "S.Poojitha Sri", "Development")
+
+        (
+            "👩🏻‍💻",
+            "Y.D.V.Sivani",
+            "AI / ML"
+        ),
+
+        (
+            "👩🏻‍💻",
+            "V.L.S.Asritha",
+            "AI / ML"
+        ),
+
+        (
+            "👩🏻‍💻",
+            "R.Likhitha",
+            "Development"
+        ),
+
+        (
+            "👩🏻‍💻",
+            "S.Poojitha Sri",
+            "Development"
+        )
     ]
 
     for col, member in zip(
@@ -1490,7 +1744,7 @@ if st.session_state.page == "home":
 
         with col:
 
-            st.markdown(
+            render_html(
                 f"""
                 <div class="team-card">
 
@@ -1507,8 +1761,7 @@ if st.session_state.page == "home":
                     </div>
 
                 </div>
-                """,
-                unsafe_allow_html=True
+                """
             )
 
 
@@ -1519,7 +1772,7 @@ if st.session_state.page == "home":
     # GUIDE CARD
     # ========================================================
 
-    st.markdown(
+    render_html(
         """
         <div class="guide-card">
 
@@ -1551,8 +1804,7 @@ if st.session_state.page == "home":
             </div>
 
         </div>
-        """,
-        unsafe_allow_html=True
+        """
     )
 
 
@@ -1560,13 +1812,12 @@ if st.session_state.page == "home":
     # FOOTER
     # ========================================================
 
-    st.markdown(
+    render_html(
         """
         <div class="footer">
             🦺 GuardX-AI • Building Safer Construction Sites with AI
         </div>
-        """,
-        unsafe_allow_html=True
+        """
     )
 
 
@@ -1576,7 +1827,7 @@ if st.session_state.page == "home":
 
 else:
 
-    st.markdown(
+    render_html(
         """
         <div class="detect-title">
             🦺 GuardX-AI
@@ -1586,8 +1837,7 @@ else:
             AI-Powered Construction Safety Monitoring
             • Visual Alerts • Email Safety Alerts
         </div>
-        """,
-        unsafe_allow_html=True
+        """
     )
 
 
@@ -1620,13 +1870,12 @@ else:
 
     with st.container(border=True):
 
-        st.markdown(
+        render_html(
             """
             <div class="card-title">
                 🤖 GuardX-AI Vision Model
             </div>
-            """,
-            unsafe_allow_html=True
+            """
         )
 
         st.markdown(
@@ -1641,8 +1890,10 @@ else:
         )
 
         st.caption(
-            f"Detection confidence: {GENERAL_CONFIDENCE:.2f} "
-            f"| NO-Safety Vest: {NO_VEST_CONFIDENCE:.2f}"
+            f"Detection confidence: "
+            f"{GENERAL_CONFIDENCE:.2f} "
+            f"| NO-Safety Vest: "
+            f"{NO_VEST_CONFIDENCE:.2f}"
         )
 
 
@@ -1672,8 +1923,9 @@ else:
             )
 
             st.write(
-                "Receive browser/mobile safety notifications "
-                "when a violation is detected."
+                "Receive browser/mobile safety "
+                "notifications when a violation "
+                "is detected."
             )
 
             if not st.session_state.push_enabled:
@@ -1683,10 +1935,15 @@ else:
                     key="prediction_push_enable"
                 ):
 
-                    token_result = get_fcm_token()
+                    token_result = (
+                        get_fcm_token()
+                    )
 
                     if (
-                        isinstance(token_result, str)
+                        isinstance(
+                            token_result,
+                            str
+                        )
                         and token_result
                         and not token_result.startswith(
                             (
@@ -1703,7 +1960,9 @@ else:
                             token_result
                         )
 
-                        st.session_state.push_enabled = True
+                        st.session_state.push_enabled = (
+                            True
+                        )
 
                         st.success(
                             "🔔 Push notifications enabled!"
@@ -1711,10 +1970,13 @@ else:
 
                         st.rerun()
 
-                    elif token_result == "PERMISSION_DENIED":
+                    elif token_result == (
+                        "PERMISSION_DENIED"
+                    ):
 
                         st.warning(
-                            "🔕 Browser notification permission denied."
+                            "🔕 Browser notification "
+                            "permission denied."
                         )
 
                     elif token_result == "NO_TOKEN":
@@ -1724,8 +1986,13 @@ else:
                         )
 
                     elif (
-                        isinstance(token_result, str)
-                        and token_result.startswith("ERROR:")
+                        isinstance(
+                            token_result,
+                            str
+                        )
+                        and token_result.startswith(
+                            "ERROR:"
+                        )
                     ):
 
                         st.error(
@@ -1744,7 +2011,7 @@ else:
 
 
     # ========================================================
-    # EMAIL STATUS
+    # EMAIL
     # ========================================================
 
     with alert2:
@@ -1762,8 +2029,10 @@ else:
 
             if (
                 "EMAIL_SENDER" in st.secrets
-                and "EMAIL_PASSWORD" in st.secrets
-                and "EMAIL_RECEIVER" in st.secrets
+                and
+                "EMAIL_PASSWORD" in st.secrets
+                and
+                "EMAIL_RECEIVER" in st.secrets
             ):
 
                 st.success(
@@ -1796,8 +2065,9 @@ else:
         )
 
         st.write(
-            "Allow location access if you want the safety "
-            "email to contain the current Google Maps location."
+            "Allow location access if you want the "
+            "safety email to contain the current "
+            "Google Maps location."
         )
 
         if st.button(
@@ -1805,11 +2075,18 @@ else:
             key="location_button"
         ):
 
-            location_result = get_live_location()
+            location_result = (
+                get_live_location()
+            )
 
             if (
-                isinstance(location_result, str)
-                and location_result.startswith("{")
+                isinstance(
+                    location_result,
+                    str
+                )
+                and location_result.startswith(
+                    "{"
+                )
             ):
 
                 try:
@@ -1855,11 +2132,13 @@ else:
             )
 
             st.success(
-                f"📍 {latitude:.6f}, {longitude:.6f}"
+                f"📍 {latitude:.6f}, "
+                f"{longitude:.6f}"
             )
 
             st.markdown(
-                f"[🗺️ Open Location in Google Maps]({maps_link})"
+                f"[🗺️ Open Location in Google Maps]"
+                f"({maps_link})"
             )
 
 
@@ -1918,14 +2197,16 @@ else:
                     "### 📸 Upload Construction Image"
                 )
 
-                uploaded_image = st.file_uploader(
-                    "Choose image",
-                    type=[
-                        "jpg",
-                        "jpeg",
-                        "png"
-                    ],
-                    key="image_upload"
+                uploaded_image = (
+                    st.file_uploader(
+                        "Choose image",
+                        type=[
+                            "jpg",
+                            "jpeg",
+                            "png"
+                        ],
+                        key="image_upload"
+                    )
                 )
 
                 if uploaded_image:
@@ -1955,15 +2236,21 @@ else:
                                 verbose=False
                             )[0]
 
-                        frame = np.array(image)
-
-                        detections = extract_detections(
-                            result
+                        frame = np.array(
+                            image
                         )
 
-                        annotated = draw_custom_boxes(
-                            frame,
-                            detections
+                        detections = (
+                            extract_detections(
+                                result
+                            )
+                        )
+
+                        annotated = (
+                            draw_custom_boxes(
+                                frame,
+                                detections
+                            )
                         )
 
                         st.session_state.result_image = (
@@ -1974,8 +2261,10 @@ else:
                             detections
                         )
 
-                        violations = get_violations(
-                            detections
+                        violations = (
+                            get_violations(
+                                detections
+                            )
                         )
 
                         st.session_state.image_violations = (
@@ -2004,7 +2293,8 @@ else:
                 ):
 
                     st.info(
-                        "Upload an image and click Detect PPE."
+                        "Upload an image and click "
+                        "Detect PPE."
                     )
 
                 else:
@@ -2041,7 +2331,9 @@ else:
 
                         for detection in detections:
 
-                            name = detection["name"]
+                            name = detection[
+                                "name"
+                            ]
 
                             confidence = detection[
                                 "confidence"
@@ -2108,15 +2400,21 @@ else:
                             verbose=False
                         )[0]
 
-                    frame = np.array(image)
-
-                    detections = extract_detections(
-                        result
+                    frame = np.array(
+                        image
                     )
 
-                    annotated = draw_custom_boxes(
-                        frame,
-                        detections
+                    detections = (
+                        extract_detections(
+                            result
+                        )
+                    )
+
+                    annotated = (
+                        draw_custom_boxes(
+                            frame,
+                            detections
+                        )
                     )
 
                     st.image(
@@ -2125,8 +2423,10 @@ else:
                         use_container_width=True
                     )
 
-                    violations = get_violations(
-                        detections
+                    violations = (
+                        get_violations(
+                            detections
+                        )
                     )
 
                     if violations:
@@ -2152,13 +2452,17 @@ else:
 
                         for detection in detections:
 
-                            name = detection["name"]
+                            name = detection[
+                                "name"
+                            ]
 
                             confidence = detection[
                                 "confidence"
                             ]
 
-                            if detection["violation"]:
+                            if detection[
+                                "violation"
+                            ]:
 
                                 st.markdown(
                                     f"🔴 **{name}** "
@@ -2185,15 +2489,17 @@ else:
                 "### 🎥 Construction Video Analysis"
             )
 
-            uploaded_video = st.file_uploader(
-                "Upload video",
-                type=[
-                    "mp4",
-                    "avi",
-                    "mov",
-                    "mkv"
-                ],
-                key="video_upload"
+            uploaded_video = (
+                st.file_uploader(
+                    "Upload video",
+                    type=[
+                        "mp4",
+                        "avi",
+                        "mov",
+                        "mkv"
+                    ],
+                    key="video_upload"
+                )
             )
 
             if uploaded_video:
@@ -2211,9 +2517,11 @@ else:
                         "🎬 Processing video... Please wait."
                     ):
 
-                        input_file = tempfile.NamedTemporaryFile(
-                            delete=False,
-                            suffix=".mp4"
+                        input_file = (
+                            tempfile.NamedTemporaryFile(
+                                delete=False,
+                                suffix=".mp4"
+                            )
                         )
 
                         input_file.write(
@@ -2231,6 +2539,7 @@ else:
                         )
 
                         if fps <= 0:
+
                             fps = 20
 
                         width = int(
@@ -2245,31 +2554,42 @@ else:
                             )
                         )
 
-                        output_file = tempfile.NamedTemporaryFile(
-                            delete=False,
-                            suffix=".mp4"
+                        output_file = (
+                            tempfile.NamedTemporaryFile(
+                                delete=False,
+                                suffix=".mp4"
+                            )
                         )
 
-                        output_path = output_file.name
+                        output_path = (
+                            output_file.name
+                        )
 
                         output_file.close()
 
-                        fourcc = cv2.VideoWriter_fourcc(
-                            *"mp4v"
+                        fourcc = (
+                            cv2.VideoWriter_fourcc(
+                                *"mp4v"
+                            )
                         )
 
                         writer = cv2.VideoWriter(
                             output_path,
                             fourcc,
                             fps,
-                            (width, height)
+                            (
+                                width,
+                                height
+                            )
                         )
 
                         video_violations = set()
 
                         while True:
 
-                            ret, frame = cap.read()
+                            ret, frame = (
+                                cap.read()
+                            )
 
                             if not ret:
                                 break
@@ -2280,13 +2600,17 @@ else:
                                 verbose=False
                             )[0]
 
-                            detections = extract_detections(
-                                result
+                            detections = (
+                                extract_detections(
+                                    result
+                                )
                             )
 
-                            annotated = draw_custom_boxes(
-                                frame,
-                                detections
+                            annotated = (
+                                draw_custom_boxes(
+                                    frame,
+                                    detections
+                                )
                             )
 
                             writer.write(
@@ -2333,10 +2657,12 @@ else:
                     if video_violations:
 
                         video_violation_list = [
+
                             (
                                 name,
                                 1.0
                             )
+
                             for name
                             in video_violations
                         ]
@@ -2359,11 +2685,10 @@ else:
     # FOOTER
     # ========================================================
 
-    st.markdown(
+    render_html(
         """
         <div class="footer">
             🦺 GuardX-AI • AI-Powered Construction Safety
         </div>
-        """,
-        unsafe_allow_html=True
+        """
     )
