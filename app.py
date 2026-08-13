@@ -58,8 +58,6 @@ for key, value in defaults.items():
 # ============================================================
 
 GENERAL_CONFIDENCE = 0.30
-
-# NO-Safety Vest false detections reduce cheyyadaniki
 NO_VEST_CONFIDENCE = 0.75
 
 
@@ -79,7 +77,6 @@ def initialize_firebase():
 
         firebase_config = dict(st.secrets["firebase"])
 
-        # Streamlit secrets lo \n proper ga convert
         if "private_key" in firebase_config:
             firebase_config["private_key"] = (
                 firebase_config["private_key"]
@@ -140,22 +137,17 @@ st.markdown(
 
 .stApp {
     background:
-        radial-gradient(
-            circle at 10% 10%,
-            rgba(124,58,237,0.20),
-            transparent 30%
-        ),
-        radial-gradient(
-            circle at 90% 15%,
-            rgba(6,182,212,0.15),
-            transparent 28%
-        ),
-        radial-gradient(
-            circle at 50% 100%,
-            rgba(236,72,153,0.10),
-            transparent 35%
-        ),
+        radial-gradient(circle at 10% 10%,
+            rgba(124,58,237,0.18),
+            transparent 30%),
+        radial-gradient(circle at 90% 15%,
+            rgba(6,182,212,0.13),
+            transparent 28%),
+        radial-gradient(circle at 50% 100%,
+            rgba(236,72,153,0.08),
+            transparent 35%),
         #090b16;
+
     color: #f8fafc;
 }
 
@@ -181,12 +173,12 @@ footer {
 
 
 /* =========================================================
-   HERO
+   HOME HERO
 ========================================================= */
 
-.hero {
+.home-hero {
     text-align: center;
-    padding: 18px 20px 28px 20px;
+    padding: 18px 20px 30px 20px;
 }
 
 .hero-badge {
@@ -202,9 +194,11 @@ footer {
 }
 
 .hero-title {
-    font-size: 44px;
+    font-size: 56px;
+    line-height: 1.1;
     font-weight: 900;
-    letter-spacing: -1.5px;
+    letter-spacing: -2px;
+
     background: linear-gradient(
         90deg,
         #ffffff,
@@ -212,61 +206,53 @@ footer {
         #67e8f9,
         #f9a8d4
     );
+
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
 }
 
 .hero-subtitle {
-    color: #94a3b8;
-    font-size: 16px;
+    color: #cbd5e1;
+    font-size: 19px;
+    font-weight: 600;
     margin-top: 10px;
 }
 
 
 /* =========================================================
-   GLASS CARDS
+   HOME CARDS
 ========================================================= */
 
-.glass-card {
+.home-card {
     background:
         linear-gradient(
             145deg,
-            rgba(30,41,59,0.82),
-            rgba(15,23,42,0.72)
+            rgba(30,41,59,0.88),
+            rgba(15,23,42,0.78)
         );
-    border: 1px solid rgba(148,163,184,0.16);
-    border-radius: 22px;
-    padding: 25px;
+
+    border: 1px solid rgba(148,163,184,0.17);
+    border-radius: 24px;
+    padding: 28px;
+
     box-shadow:
-        0 18px 50px rgba(0,0,0,0.25),
+        0 18px 50px rgba(0,0,0,0.28),
         inset 0 1px 0 rgba(255,255,255,0.04);
-    backdrop-filter: blur(14px);
+
+    min-height: 250px;
 }
 
-.glass-card:hover {
-    border-color: rgba(139,92,246,0.35);
-}
-
-.card-title {
-    color: #f8fafc;
-    font-size: 18px;
-    font-weight: 800;
-    margin-bottom: 12px;
-}
-
-.card-text {
-    color: #aab5c7;
-    font-size: 14px;
-    line-height: 1.8;
+.home-card:hover {
+    border-color: rgba(139,92,246,0.40);
 }
 
 
 /* =========================================================
-   HOME LEFT
+   AICW CARD
 ========================================================= */
 
 .aicw-card {
-    min-height: 320px;
+    min-height: 330px;
     display: flex;
     flex-direction: column;
     justify-content: center;
@@ -292,46 +278,83 @@ footer {
 
 .capstone {
     margin-top: 22px;
-    display: inline-block;
     padding: 9px 15px;
     border-radius: 30px;
     background: rgba(34,211,238,0.10);
     border: 1px solid rgba(34,211,238,0.25);
     color: #67e8f9;
     font-weight: 700;
+    display: inline-block;
 }
 
 
 /* =========================================================
-   TEAM CARDS
+   ABOUT CARD
 ========================================================= */
 
-.member-card {
-    background: linear-gradient(
-        145deg,
-        rgba(30,41,59,0.75),
-        rgba(15,23,42,0.65)
-    );
-    border: 1px solid rgba(148,163,184,0.13);
+.about-title {
+    color: #ffffff;
+    font-size: 20px;
+    font-weight: 850;
+    margin-bottom: 14px;
+}
+
+.about-text {
+    color: #aab5c7;
+    font-size: 14px;
+    line-height: 1.8;
+}
+
+
+/* =========================================================
+   TEAM
+========================================================= */
+
+.team-heading {
+    color: #f8fafc;
+    font-size: 22px;
+    font-weight: 900;
+    margin: 12px 0 16px 0;
+}
+
+.team-card {
+    background:
+        linear-gradient(
+            145deg,
+            rgba(30,41,59,0.82),
+            rgba(15,23,42,0.72)
+        );
+
+    border: 1px solid rgba(148,163,184,0.15);
     border-radius: 20px;
-    padding: 18px;
-    min-height: 180px;
+    padding: 20px;
+    min-height: 165px;
+
+    box-shadow:
+        0 12px 35px rgba(0,0,0,0.20);
 }
 
 .avatar {
-    width: 58px;
-    height: 58px;
+    width: 56px;
+    height: 56px;
     border-radius: 50%;
+
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 29px;
-    background: linear-gradient(
-        135deg,
-        #7c3aed,
-        #06b6d4
-    );
-    box-shadow: 0 8px 25px rgba(124,58,237,0.30);
+
+    font-size: 28px;
+
+    background:
+        linear-gradient(
+            135deg,
+            #7c3aed,
+            #06b6d4
+        );
+
+    box-shadow:
+        0 8px 25px rgba(124,58,237,0.30);
+
     margin-bottom: 12px;
 }
 
@@ -349,22 +372,47 @@ footer {
 
 
 /* =========================================================
+   GUIDE
+========================================================= */
+
+.guide-card {
+    background:
+        linear-gradient(
+            145deg,
+            rgba(30,41,59,0.88),
+            rgba(15,23,42,0.78)
+        );
+
+    border: 1px solid rgba(167,139,250,0.20);
+    border-radius: 22px;
+    padding: 20px 24px;
+
+    box-shadow:
+        0 12px 35px rgba(0,0,0,0.22);
+}
+
+
+/* =========================================================
    BUTTONS
 ========================================================= */
 
 div.stButton > button {
     width: 100%;
     min-height: 48px;
+
     border-radius: 13px !important;
 
-    background: linear-gradient(
-        135deg,
-        #7c3aed,
-        #2563eb
-    ) !important;
+    background:
+        linear-gradient(
+            135deg,
+            #7c3aed,
+            #2563eb
+        ) !important;
 
     color: white !important;
-    border: 1px solid rgba(167,139,250,0.4) !important;
+
+    border:
+        1px solid rgba(167,139,250,0.4) !important;
 
     font-size: 14px !important;
     font-weight: 800 !important;
@@ -377,8 +425,10 @@ div.stButton > button {
 
 div.stButton > button:hover {
     transform: translateY(-2px);
+
     box-shadow:
         0 12px 35px rgba(124,58,237,0.40);
+
     border-color: #a78bfa !important;
 }
 
@@ -413,7 +463,7 @@ div[data-testid="stFileUploader"] {
 
 
 /* =========================================================
-   STREAMLIT CONTAINER
+   STREAMLIT CONTAINERS
 ========================================================= */
 
 div[data-testid="stVerticalBlockBorderWrapper"] {
@@ -424,7 +474,8 @@ div[data-testid="stVerticalBlockBorderWrapper"] {
             rgba(15,23,42,0.72)
         ) !important;
 
-    border: 1px solid rgba(148,163,184,0.14) !important;
+    border:
+        1px solid rgba(148,163,184,0.14) !important;
 
     border-radius: 20px !important;
 
@@ -436,7 +487,7 @@ div[data-testid="stVerticalBlockBorderWrapper"] {
 
 
 /* =========================================================
-   INPUT TEXT
+   TEXT
 ========================================================= */
 
 .stMarkdown,
@@ -456,15 +507,16 @@ label {
 
 .detect-title {
     text-align: center;
-    font-size: 40px;
+    font-size: 44px;
     font-weight: 900;
 
-    background: linear-gradient(
-        90deg,
-        #c4b5fd,
-        #67e8f9,
-        #f9a8d4
-    );
+    background:
+        linear-gradient(
+            90deg,
+            #c4b5fd,
+            #67e8f9,
+            #f9a8d4
+        );
 
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
@@ -532,14 +584,16 @@ label {
 
 
 /* =========================================================
-   ALERT STATUS
+   ALERT
 ========================================================= */
 
 .alert-card {
     padding: 16px;
     border-radius: 15px;
+
     background: rgba(59,130,246,0.08);
     border: 1px solid rgba(96,165,250,0.22);
+
     color: #bfdbfe;
 }
 
@@ -563,7 +617,7 @@ label {
 @media(max-width: 900px) {
 
     .hero-title {
-        font-size: 30px;
+        font-size: 38px;
     }
 
     .detect-title {
@@ -610,9 +664,7 @@ def load_model():
 def normalize_class_name(name):
 
     name = str(name).lower().strip()
-
     name = name.replace("_", "-")
-
     name = " ".join(name.split())
 
     return name
@@ -724,26 +776,17 @@ def draw_custom_boxes(frame, detections):
 
         violation = detection["violation"]
 
-        # ----------------------------------------------------
-        # VIOLATION = RED
-        # NORMAL OBJECT = CYAN/GREEN
-        # ----------------------------------------------------
-
+        # RED for violations
         if violation:
 
             color = (40, 40, 255)
-
             label_color = (40, 40, 255)
 
+        # CYAN/GREEN for normal objects
         else:
 
             color = (0, 220, 190)
-
             label_color = (0, 220, 190)
-
-        # ----------------------------------------------------
-        # BOX
-        # ----------------------------------------------------
 
         cv2.rectangle(
             output,
@@ -753,19 +796,13 @@ def draw_custom_boxes(frame, detections):
             3
         )
 
-        # ----------------------------------------------------
-        # LABEL
-        # ----------------------------------------------------
-
         label = (
             f"{name} "
             f"{confidence * 100:.1f}%"
         )
 
         font = cv2.FONT_HERSHEY_SIMPLEX
-
         font_scale = 0.55
-
         thickness = 2
 
         (tw, th), _ = cv2.getTextSize(
@@ -979,10 +1016,6 @@ def send_email_alert(
 
     try:
 
-        # ----------------------------------------------------
-        # CHECK EMAIL SECRETS
-        # ----------------------------------------------------
-
         required = [
             "EMAIL_SENDER",
             "EMAIL_PASSWORD",
@@ -1005,14 +1038,8 @@ def send_email_alert(
             return False
 
         sender = st.secrets["EMAIL_SENDER"]
-
         password = st.secrets["EMAIL_PASSWORD"]
-
         receiver = st.secrets["EMAIL_RECEIVER"]
-
-        # ----------------------------------------------------
-        # DATE / TIME
-        # ----------------------------------------------------
 
         now = datetime.now()
 
@@ -1024,10 +1051,6 @@ def send_email_alert(
             "%I:%M:%S %p"
         )
 
-        # ----------------------------------------------------
-        # VIOLATION
-        # ----------------------------------------------------
-
         violation_text = ", ".join(
             sorted(
                 set(
@@ -1038,14 +1061,9 @@ def send_email_alert(
             )
         )
 
-        # ----------------------------------------------------
-        # LOCATION
-        # ----------------------------------------------------
-
         if location_data:
 
             latitude = location_data["latitude"]
-
             longitude = location_data["longitude"]
 
             maps_link = (
@@ -1066,18 +1084,10 @@ def send_email_alert(
                 "Location : Not available"
             )
 
-        # ----------------------------------------------------
-        # SUBJECT
-        # ----------------------------------------------------
-
         subject = (
             f"🚨 GuardX-AI Safety Alert | "
             f"{violation_text}"
         )
-
-        # ----------------------------------------------------
-        # BODY
-        # ----------------------------------------------------
 
         body = f"""
 GUARDX-AI
@@ -1123,10 +1133,6 @@ Construction PPE Safety Monitoring System
 Automatically generated safety alert.
 """
 
-        # ----------------------------------------------------
-        # SEND
-        # ----------------------------------------------------
-
         message = EmailMessage()
 
         message["From"] = sender
@@ -1142,9 +1148,7 @@ Automatically generated safety alert.
         ) as server:
 
             server.ehlo()
-
             server.starttls()
-
             server.ehlo()
 
             server.login(
@@ -1179,16 +1183,10 @@ def handle_violation_alert(
     if not violations:
         return
 
-    # --------------------------------------------------------
-    # LOCATION
-    # --------------------------------------------------------
-
     location_data = st.session_state.get(
         "location"
     )
 
-    # If user already allowed location,
-    # use stored location.
     if not location_data:
 
         try:
@@ -1211,10 +1209,6 @@ def handle_violation_alert(
         except Exception:
             location_data = None
 
-    # --------------------------------------------------------
-    # TEXT
-    # --------------------------------------------------------
-
     violation_text = ", ".join(
         sorted(
             set(
@@ -1224,10 +1218,6 @@ def handle_violation_alert(
             )
         )
     )
-
-    # --------------------------------------------------------
-    # PUSH
-    # --------------------------------------------------------
 
     if st.session_state.fcm_token:
 
@@ -1248,10 +1238,6 @@ def handle_violation_alert(
             st.warning(
                 "⚠️ Push notification failed."
             )
-
-    # --------------------------------------------------------
-    # EMAIL
-    # --------------------------------------------------------
 
     email_success = send_email_alert(
         violations,
@@ -1343,9 +1329,13 @@ def display_safe_box():
 
 if st.session_state.page == "home":
 
+    # ========================================================
+    # HERO
+    # ========================================================
+
     st.markdown(
         """
-        <div class="hero">
+        <div class="home-hero">
 
             <div class="hero-badge">
                 ✨ AI-POWERED SAFETY MONITORING
@@ -1356,7 +1346,7 @@ if st.session_state.page == "home":
             </div>
 
             <div class="hero-subtitle">
-                Construction PPE Detection & Safety Alert System
+                AI-Powered Construction Safety Monitoring
             </div>
 
         </div>
@@ -1364,20 +1354,26 @@ if st.session_state.page == "home":
         unsafe_allow_html=True
     )
 
+
+    # ========================================================
+    # TOP CARDS
+    # ========================================================
+
     left_col, right_col = st.columns(
         [0.40, 0.60],
         gap="large"
     )
 
+
     # ========================================================
-    # LEFT
+    # AICW CARD
     # ========================================================
 
     with left_col:
 
         st.markdown(
             """
-            <div class="glass-card aicw-card">
+            <div class="home-card aicw-card">
 
                 <div class="aicw-icon">
                     👩🏻‍💻
@@ -1403,7 +1399,7 @@ if st.session_state.page == "home":
         st.write("")
 
         if st.button(
-            "🔍  START PPE DETECTION",
+            "🔍 PREDICT",
             key="home_predict_button"
         ):
 
@@ -1411,21 +1407,22 @@ if st.session_state.page == "home":
 
             st.rerun()
 
+
     # ========================================================
-    # RIGHT
+    # ABOUT CARD
     # ========================================================
 
     with right_col:
 
         st.markdown(
             """
-            <div class="glass-card">
+            <div class="home-card">
 
-                <div class="card-title">
+                <div class="about-title">
                     🛡️ What is GuardX-AI?
                 </div>
 
-                <div class="card-text">
+                <div class="about-text">
 
                     Construction sites involve high-risk
                     activities where Personal Protective
@@ -1451,24 +1448,33 @@ if st.session_state.page == "home":
             unsafe_allow_html=True
         )
 
+
     st.write("")
     st.write("")
 
 
     # ========================================================
-    # TEAM
+    # TEAM HEADING
     # ========================================================
 
     st.markdown(
         """
-        <div class="card-title">
+        <div class="team-heading">
             👩🏻‍💻 Our Team
         </div>
         """,
         unsafe_allow_html=True
     )
 
-    c1, c2, c3, c4 = st.columns(4)
+
+    # ========================================================
+    # TEAM CARDS
+    # ========================================================
+
+    c1, c2, c3, c4 = st.columns(
+        4,
+        gap="medium"
+    )
 
     members = [
         ("👩🏻‍💻", "Y.D.V.Sivani", "AI / ML"),
@@ -1486,7 +1492,7 @@ if st.session_state.page == "home":
 
             st.markdown(
                 f"""
-                <div class="member-card">
+                <div class="team-card">
 
                     <div class="avatar">
                         {member[0]}
@@ -1510,14 +1516,18 @@ if st.session_state.page == "home":
 
 
     # ========================================================
-    # GUIDE
+    # GUIDE CARD
     # ========================================================
 
     st.markdown(
         """
-        <div class="member-card">
+        <div class="guide-card">
 
-            <div style="display:flex;align-items:center;gap:18px;">
+            <div style="
+                display:flex;
+                align-items:center;
+                gap:18px;
+            ">
 
                 <div class="avatar"
                      style="margin:0;">
@@ -1546,6 +1556,10 @@ if st.session_state.page == "home":
     )
 
 
+    # ========================================================
+    # FOOTER
+    # ========================================================
+
     st.markdown(
         """
         <div class="footer">
@@ -1565,11 +1579,12 @@ else:
     st.markdown(
         """
         <div class="detect-title">
-            🦺 GuardX-AI Detection Center
+            🦺 GuardX-AI
         </div>
 
         <div class="detect-subtitle">
-            Intelligent PPE monitoring • Visual alerts • Email safety alerts
+            AI-Powered Construction Safety Monitoring
+            • Visual Alerts • Email Safety Alerts
         </div>
         """,
         unsafe_allow_html=True
@@ -1638,7 +1653,10 @@ else:
     # ALERT CARDS
     # ========================================================
 
-    alert1, alert2 = st.columns(2, gap="large")
+    alert1, alert2 = st.columns(
+        2,
+        gap="large"
+    )
 
 
     # ========================================================
@@ -1892,10 +1910,6 @@ else:
             gap="large"
         )
 
-        # ----------------------------------------------------
-        # INPUT
-        # ----------------------------------------------------
-
         with input_col:
 
             with st.container(border=True):
@@ -1975,10 +1989,6 @@ else:
                                 "image"
                             )
 
-
-        # ----------------------------------------------------
-        # RESULT
-        # ----------------------------------------------------
 
         with result_col:
 
