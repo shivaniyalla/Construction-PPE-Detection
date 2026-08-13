@@ -36,14 +36,8 @@ if "fcm_token" not in st.session_state:
 if "push_enabled" not in st.session_state:
     st.session_state.push_enabled = False
 
-if "result_image" not in st.session_state:
-    st.session_state.result_image = None
-
-if "detections" not in st.session_state:
-    st.session_state.detections = []
-
-if "image_violations" not in st.session_state:
-    st.session_state.image_violations = []
+if "firebase_ready" not in st.session_state:
+    st.session_state.firebase_ready = False
 
 
 # ============================================================
@@ -88,6 +82,10 @@ st.markdown(
     """
     <style>
 
+    /* ======================================================
+       APP
+       ====================================================== */
+
     .stApp {
         background: #f4f6fa;
     }
@@ -114,7 +112,7 @@ st.markdown(
 
 
     /* ======================================================
-       HOME
+       HOME PAGE
        ====================================================== */
 
     .main-title {
@@ -148,7 +146,7 @@ st.markdown(
 
 
     /* ======================================================
-       GENERAL
+       GENERAL TEXT
        ====================================================== */
 
     .stMarkdown,
@@ -156,6 +154,11 @@ st.markdown(
     .stMarkdown li {
         color: #374151;
     }
+
+
+    /* ======================================================
+       CARDS
+       ====================================================== */
 
     div[data-testid="stVerticalBlockBorderWrapper"] {
         background: #ffffff !important;
@@ -185,7 +188,7 @@ st.markdown(
 
     div.stButton > button {
         width: 100%;
-        min-height: 45px;
+        height: 45px;
         background: #ffffff !important;
         color: #334155 !important;
         border: 1px solid #d5dce6 !important;
@@ -202,7 +205,7 @@ st.markdown(
 
 
     /* ======================================================
-       INPUTS
+       RADIO / INPUT
        ====================================================== */
 
     div[data-testid="stRadio"] label {
@@ -253,7 +256,7 @@ st.markdown(
 
 
     /* ======================================================
-       SAFETY BOXES
+       SAFE BOX
        ====================================================== */
 
     .safe-box {
@@ -266,6 +269,11 @@ st.markdown(
         margin-top: 15px;
     }
 
+
+    /* ======================================================
+       VIOLATION BOX
+       ====================================================== */
+
     .violation-box {
         background: #fef2f2;
         border: 1px solid #fecaca;
@@ -276,16 +284,16 @@ st.markdown(
     }
 
     .violation-title {
-        color: #991b1b !important;
         font-size: 18px;
         font-weight: 800;
-        margin-bottom: 10px;
+        color: #991b1b !important;
+        margin-bottom: 12px;
     }
 
     .violation-text {
-        color: #991b1b !important;
         font-size: 15px;
         font-weight: 600;
+        color: #991b1b !important;
     }
 
 
@@ -297,16 +305,9 @@ st.markdown(
         background: #f8fafc;
         border: 1px solid #e2e8f0;
         border-radius: 12px;
-        padding: 15px;
+        padding: 12px;
         margin-top: 10px;
         color: #334155 !important;
-    }
-
-    .model-title {
-        color: #26364d !important;
-        font-size: 16px;
-        font-weight: 800;
-        margin-bottom: 8px;
     }
 
 
@@ -333,6 +334,10 @@ st.markdown(
             font-size: 19px !important;
         }
 
+        .detect-title {
+            font-size: 26px;
+        }
+
     }
 
     </style>
@@ -343,46 +348,23 @@ st.markdown(
 
 # ============================================================
 # LOAD YOLO MODEL
-# SUPPORTS best.pt AND best(5).pt
 # ============================================================
 
 @st.cache_resource
 def load_model():
 
-    base_dir = os.path.dirname(
-        os.path.abspath(__file__)
+    model_path = os.path.join(
+        os.path.dirname(__file__),
+        "best.pt"
     )
 
-    possible_models = [
-        "best.pt",
-        "best(5).pt"
-    ]
-
-    model_path = None
-
-    for filename in possible_models:
-
-        path = os.path.join(
-            base_dir,
-            filename
-        )
-
-        if os.path.exists(path):
-
-            model_path = path
-            break
-
-    if model_path is None:
+    if not os.path.exists(model_path):
 
         raise FileNotFoundError(
-            "Model file not found. "
-            "Please keep best.pt or best(5).pt "
-            "in the same folder as app.py."
+            f"best.pt not found at: {model_path}"
         )
 
-    model = YOLO(model_path)
-
-    return model
+    return YOLO(model_path)
 
 
 # ============================================================
@@ -535,18 +517,35 @@ def send_push_notification(
 
 
 # ============================================================
-# NORMALIZE CLASS NAME
+# EXTRACT DETECTIONS
 # ============================================================
 
-def normalize_class_name(name):
+def extract_detections(result):
 
-    return (
-        name
-        .lower()
-        .strip()
-        .replace("_", "-")
-        .replace(" ", "-")
-    )
+    detections = []
+
+    if result.boxes is not None:
+
+        for box in result.boxes:
+
+            class_id = int(
+                box.cls[0]
+            )
+
+            confidence = float(
+                box.conf[0]
+            )
+
+            name = result.names[class_id]
+
+            detections.append(
+                (
+                    name,
+                    confidence
+                )
+            )
+
+    return detections
 
 
 # ============================================================
@@ -555,23 +554,43 @@ def normalize_class_name(name):
 
 def get_violations(detections):
 
-    # EXACT CLASSES FROM YOUR TRAINED MODEL
-    violation_names = {
+    """
+    Current trained model classes:
 
+    0 -> Hardhat
+    1 -> NO-Hardhat
+    2 -> Mask
+    3 -> NO-Mask
+    4 -> NO-Safety Vest
+    """
+
+    violation_names = {
         "no-hardhat",
+        "no_hardhat",
+        "no hardhat",
 
         "no-mask",
+        "no_mask",
+        "no mask",
 
-        "no-safety-vest"
-
+        "no-safety vest",
+        "no-safety-vest",
+        "no_safety_vest",
+        "no safety vest"
     }
 
     violations = []
 
     for name, confidence in detections:
 
-        normalized_name = normalize_class_name(
-            name
+        normalized_name = (
+            name.lower()
+            .strip()
+        )
+
+        normalized_name = (
+            normalized_name
+            .replace("_", "-")
         )
 
         if normalized_name in violation_names:
@@ -587,42 +606,7 @@ def get_violations(detections):
 
 
 # ============================================================
-# EXTRACT DETECTIONS
-# ============================================================
-
-def extract_detections(result):
-
-    detections = []
-
-    if result.boxes is None:
-        return detections
-
-    for box in result.boxes:
-
-        class_id = int(
-            box.cls[0]
-        )
-
-        confidence = float(
-            box.conf[0]
-        )
-
-        name = result.names[
-            class_id
-        ]
-
-        detections.append(
-            (
-                name,
-                confidence
-            )
-        )
-
-    return detections
-
-
-# ============================================================
-# DISPLAY VIOLATION
+# DISPLAY VIOLATION BOX
 # ============================================================
 
 def display_violation_box(
@@ -651,9 +635,26 @@ def display_violation_box(
             </div>
 
             <div class="violation-text">
-                Violations: {violation_text}
+                Violations:
+                <strong>{violation_text}</strong>
             </div>
 
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+
+
+# ============================================================
+# DISPLAY SAFE BOX
+# ============================================================
+
+def display_safe_box():
+
+    st.markdown(
+        """
+        <div class="safe-box">
+            🟢 No configured PPE violation detected.
         </div>
         """,
         unsafe_allow_html=True
@@ -685,8 +686,8 @@ def handle_violation_alert(
     title = "🚨 GuardX-AI Safety Alert"
 
     body = (
-        f"PPE violation detected in {source}: "
-        f"{violation_text}"
+        f"PPE violation detected in "
+        f"{source}: {violation_text}"
     )
 
     if st.session_state.fcm_token:
@@ -932,6 +933,10 @@ if st.session_state.page == "home":
 
 else:
 
+    # ========================================================
+    # TITLE
+    # ========================================================
+
     st.markdown(
         """
         <div class="detect-title">
@@ -962,12 +967,11 @@ else:
     except Exception as e:
 
         st.error(
-            "❌ YOLO model load avvaledu."
+            "❌ best.pt model load avvaledu."
         )
 
         st.info(
-            "Keep best.pt or best(5).pt "
-            "in the same folder as app.py."
+            "Make sure best.pt is in the same folder as app.py."
         )
 
         st.caption(
@@ -985,7 +989,7 @@ else:
 
         st.markdown(
             """
-            <div class="model-title">
+            <div class="card-heading">
                 🤖 GuardX-AI Detection Model
             </div>
             """,
@@ -998,21 +1002,12 @@ else:
 
         st.markdown(
             """
-            <div class="model-box">
-
-            🪖 <strong>Hardhat</strong>
-            &nbsp;&nbsp;|&nbsp;&nbsp;
-            🚨 <strong>NO-Hardhat</strong>
-            &nbsp;&nbsp;|&nbsp;&nbsp;
-            😷 <strong>Mask</strong>
-            &nbsp;&nbsp;|&nbsp;&nbsp;
-            🚨 <strong>NO-Mask</strong>
-            &nbsp;&nbsp;|&nbsp;&nbsp;
-            🚨 <strong>NO-Safety Vest</strong>
-
-            </div>
-            """,
-            unsafe_allow_html=True
+            🪖 **Hardhat**  
+            🚨 **NO-Hardhat**  
+            😷 **Mask**  
+            🚨 **NO-Mask**  
+            🚨 **NO-Safety Vest**
+            """
         )
 
 
@@ -1020,18 +1015,13 @@ else:
 
 
     # ========================================================
-    # PUSH NOTIFICATIONS
+    # PUSH NOTIFICATION CARD
     # ========================================================
 
     with st.container(border=True):
 
         st.markdown(
-            """
-            <div class="push-title">
-                🔔 Safety Push Notifications
-            </div>
-            """,
-            unsafe_allow_html=True
+            "### 🔔 Safety Push Notifications"
         )
 
         st.write(
@@ -1191,20 +1181,17 @@ else:
                 key="image_upload"
             )
 
-
             if uploaded_image:
 
                 image = Image.open(
                     uploaded_image
                 ).convert("RGB")
 
-
                 st.image(
                     image,
                     caption="Input Image",
                     use_container_width=True
                 )
-
 
                 if st.button(
                     "🔍 Detect PPE",
@@ -1222,14 +1209,12 @@ else:
                             verbose=False
                         )[0]
 
-
                     annotated = result.plot()
 
                     annotated = cv2.cvtColor(
                         annotated,
                         cv2.COLOR_BGR2RGB
                     )
-
 
                     detections = extract_detections(
                         result
@@ -1238,7 +1223,6 @@ else:
                     violations = get_violations(
                         detections
                     )
-
 
                     st.session_state.result_image = (
                         annotated
@@ -1251,7 +1235,6 @@ else:
                     st.session_state.image_violations = (
                         violations
                     )
-
 
                     if violations:
 
@@ -1271,13 +1254,11 @@ else:
                 "Detection Result"
             )
 
-
-            if st.session_state.result_image is None:
+            if "result_image" not in st.session_state:
 
                 st.info(
                     "Upload an image and click Detect PPE."
                 )
-
 
             else:
 
@@ -1287,18 +1268,19 @@ else:
                     use_container_width=True
                 )
 
-
                 detections = (
                     st.session_state.detections
                 )
 
                 violations = (
-                    st.session_state.image_violations
+                    st.session_state.get(
+                        "image_violations",
+                        []
+                    )
                 )
 
-
                 # --------------------------------------------
-                # VIOLATION
+                # VIOLATION / SAFE
                 # --------------------------------------------
 
                 if violations:
@@ -1309,16 +1291,7 @@ else:
 
                 else:
 
-                    st.markdown(
-                        """
-                        <div class="safe-box">
-
-                            🟢 No configured PPE violation detected.
-
-                        </div>
-                        """,
-                        unsafe_allow_html=True
-                    )
+                    display_safe_box()
 
 
                 # --------------------------------------------
@@ -1345,9 +1318,9 @@ else:
                     )
 
 
-    # ============================================================
+    # ========================================================
     # CAMERA
-    # ============================================================
+    # ========================================================
 
     elif input_type == "📷 Camera":
 
@@ -1356,13 +1329,11 @@ else:
             key="camera_input"
         )
 
-
         if camera_image:
 
             image = Image.open(
                 camera_image
             ).convert("RGB")
-
 
             if st.button(
                 "🔍 Detect PPE",
@@ -1380,7 +1351,6 @@ else:
                         verbose=False
                     )[0]
 
-
                 annotated = result.plot()
 
                 annotated = cv2.cvtColor(
@@ -1388,13 +1358,11 @@ else:
                     cv2.COLOR_BGR2RGB
                 )
 
-
                 st.image(
                     annotated,
                     caption="GuardX-AI Detection Result",
                     use_container_width=True
                 )
-
 
                 detections = extract_detections(
                     result
@@ -1404,6 +1372,9 @@ else:
                     detections
                 )
 
+                # --------------------------------------------
+                # VIOLATION / SAFE
+                # --------------------------------------------
 
                 if violations:
 
@@ -1418,17 +1389,12 @@ else:
 
                 else:
 
-                    st.markdown(
-                        """
-                        <div class="safe-box">
+                    display_safe_box()
 
-                            🟢 No configured PPE violation detected.
 
-                        </div>
-                        """,
-                        unsafe_allow_html=True
-                    )
-
+                # --------------------------------------------
+                # DETECTED OBJECTS
+                # --------------------------------------------
 
                 if detections:
 
@@ -1450,9 +1416,9 @@ else:
                     )
 
 
-    # ============================================================
+    # ========================================================
     # VIDEO
-    # ============================================================
+    # ========================================================
 
     elif input_type == "🎥 Video":
 
@@ -1467,13 +1433,11 @@ else:
             key="video_upload"
         )
 
-
         if uploaded_video:
 
             st.video(
                 uploaded_video
             )
-
 
             if st.button(
                 "🎥 Detect PPE in Video",
@@ -1484,6 +1448,10 @@ else:
                 with st.spinner(
                     "Processing video... Please wait."
                 ):
+
+                    # ----------------------------------------
+                    # SAVE INPUT VIDEO
+                    # ----------------------------------------
 
                     input_file = tempfile.NamedTemporaryFile(
                         delete=False,
@@ -1497,10 +1465,13 @@ else:
                     input_file.close()
 
 
+                    # ----------------------------------------
+                    # OPEN VIDEO
+                    # ----------------------------------------
+
                     cap = cv2.VideoCapture(
                         input_file.name
                     )
-
 
                     fps = cap.get(
                         cv2.CAP_PROP_FPS
@@ -1508,7 +1479,6 @@ else:
 
                     if fps <= 0:
                         fps = 20
-
 
                     width = int(
                         cap.get(
@@ -1522,6 +1492,10 @@ else:
                         )
                     )
 
+
+                    # ----------------------------------------
+                    # OUTPUT VIDEO
+                    # ----------------------------------------
 
                     output_file = tempfile.NamedTemporaryFile(
                         delete=False,
@@ -1537,7 +1511,6 @@ else:
                         *"mp4v"
                     )
 
-
                     writer = cv2.VideoWriter(
                         output_path,
                         fourcc,
@@ -1546,8 +1519,16 @@ else:
                     )
 
 
+                    # ----------------------------------------
+                    # TRACK VIOLATIONS
+                    # ----------------------------------------
+
                     video_violations = set()
 
+
+                    # ----------------------------------------
+                    # PROCESS FRAMES
+                    # ----------------------------------------
 
                     while True:
 
@@ -1571,12 +1552,15 @@ else:
                         )
 
 
+                        # Get detections
                         frame_detections = (
                             extract_detections(
                                 result
                             )
                         )
 
+
+                        # Get violations
                         frame_violations = (
                             get_violations(
                                 frame_detections
@@ -1596,26 +1580,31 @@ else:
                     writer.release()
 
 
-                    # Remove temporary input
-                    try:
-                        os.remove(
-                            input_file.name
-                        )
-                    except:
-                        pass
-
-
                 st.success(
                     "✅ Video processing completed."
                 )
 
+
+                # --------------------------------------------
+                # SHOW VIDEO
+                # --------------------------------------------
 
                 st.video(
                     output_path
                 )
 
 
+                # --------------------------------------------
+                # VIDEO RESULT
+                # --------------------------------------------
+
                 if video_violations:
+
+                    violation_text = ", ".join(
+                        sorted(
+                            video_violations
+                        )
+                    )
 
                     video_violation_list = [
                         (
@@ -1626,28 +1615,15 @@ else:
                         in video_violations
                     ]
 
-
                     display_violation_box(
                         video_violation_list
                     )
-
 
                     handle_violation_alert(
                         video_violation_list,
                         "video"
                     )
 
-
                 else:
 
-                    st.markdown(
-                        """
-                        <div class="safe-box">
-
-                            🟢 No configured PPE violation
-                            detected in the video.
-
-                        </div>
-                        """,
-                        unsafe_allow_html=True
-                    )
+                    display_safe_box()
