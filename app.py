@@ -1749,10 +1749,11 @@ if st.session_state.page == "home":
 
                 <div class="member-name">
                     Y.D.V.Sivani
+                    yallashivani3008@gmail.com
                 </div>
 
                 <div class="member-role">
-                    AI / ML
+                    ProjectLead & AI/ML developer
                 </div>
 
             </div>
@@ -1772,10 +1773,11 @@ if st.session_state.page == "home":
 
                 <div class="member-name">
                     V.L.S.Asritha
+                    asrithavantipalli2007@gmail.com
                 </div>
 
                 <div class="member-role">
-                    AI / ML
+                    Technical Documentation Lead
                 </div>
 
             </div>
@@ -1795,10 +1797,11 @@ if st.session_state.page == "home":
 
                 <div class="member-name">
                     R.Likhitha
+                    likitharayudu6@gmail.com
                 </div>
 
                 <div class="member-role">
-                    Development
+                    Demo & Presentation Lead
                 </div>
 
             </div>
@@ -1817,11 +1820,12 @@ if st.session_state.page == "home":
                 </div>
 
                 <div class="member-name">
-                    S.Poojitha Sri
+                    S.Pujitha Sri
+                    sanaboinapujitasri@gmail.com
                 </div>
 
                 <div class="member-role">
-                    Development
+                    Presentation Document Lead
                 </div>
 
             </div>
@@ -1856,6 +1860,7 @@ if st.session_state.page == "home":
 
                     <div class="member-name"
                          style="font-size:18px;">
+                         Guide
                         MD. Abdul Aziz
                     </div>
 
