@@ -1610,7 +1610,7 @@ if st.session_state.page == "home":
             </div>
 
             <div class="hero-title">
-                🦺 GuardX-AI
+                👩‍🚒 GuardX-AI
             </div>
 
             <div class="hero-subtitle">
